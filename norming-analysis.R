@@ -1,6 +1,7 @@
 library(readr)
 library(dplyr)
-df <- read_csv(file = "results.csv",col_names = FALSE)
+res <- read_csv(file = "results.csv",col_names = FALSE)
+df <- res
 head(df)
 colnames(df) <- LETTERS[1:24] # like the google sheet
 head(df)
@@ -11,3 +12,8 @@ length(unique(list_of_names)) # 1 unique name
 list_of_names[duplicated(list_of_names)]
 # philip naef is dup, but it seems to be fine bc he got a different order of words/sentences
 
+
+df <- filter(df, !grepl("^#",A)) # remove all rows that start with a hashtag which are all the comments
+head(df)
+df <- select(df,-c(A,B,C,D,E,G)) # remove unnessesary columns
+colnames(df) <- c("restime","")
