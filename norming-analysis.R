@@ -15,5 +15,10 @@ list_of_names[duplicated(list_of_names)]
 
 df <- filter(df, !grepl("^#",A)) # remove all rows that start with a hashtag which are all the comments
 head(df)
-df <- select(df,-c(A,B,C,D,E,G)) # remove unnessesary columns
-colnames(df) <- c("restime","")
+df <- select(df,-c(B,C,D,E,G)) # remove unnessesary columns
+
+# assign each result time number to the name as an id
+times <- unique(df[,"A"])[[1]]
+length(times)
+length(list_of_names)
+cbind(list_of_names,times)
