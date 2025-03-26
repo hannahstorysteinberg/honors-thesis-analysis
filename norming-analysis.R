@@ -9,3 +9,5 @@ list_of_names
 length(list_of_names)
 length(unique(list_of_names)) # 1 unique name
 list_of_names[duplicated(list_of_names)]
+# philip naef is dup, but it seems to be fine bc he got a different order of words/sentences
+
