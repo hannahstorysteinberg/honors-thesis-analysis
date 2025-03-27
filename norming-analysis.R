@@ -37,11 +37,23 @@ df_demo <- filter(df,Phase == "demographics")
 
 
 # LEGIBILITY OF EACH PHOTO
+#make negative if supposed to be ill? 
+head(df_main)
+leg <- data.frame(photo = unique(df$fileName), legibility = NA, number = NA) # go through and add all the legibility scores and one to number, then divide legibility by number
+
+
+
 
 
 
 # CONFIDENCE FOR EACH PHOTO
 
+
+
+# LEGIBILITY OF EACH SENTENCE
+
+
+# CONFIDENCE FOR EACH SENTENCE
 
 
 # PERCENTAGE LITERAL WORD PER SENTENCE (while having context correct)
