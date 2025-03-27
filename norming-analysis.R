@@ -25,3 +25,7 @@ length(list_of_names)
 key <- setNames(list_of_names,times)
 
 df$A <- str_replace_all(df$A, key)
+df <- filter(df,!(F == "instructions" | F == "secondpage")) # they all consented and have native english so can remove that part
+
+
+
