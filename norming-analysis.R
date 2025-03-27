@@ -49,22 +49,35 @@ for (i in 1:nrow(leg)) { # go through the rows
 }
 leg$legibility <- round(leg$legibility,2)
 leg
-mean(filter(leg,isLeg == "leg")$legibility) # avg legibility of legibile sentences
+mean(filter(leg,isLeg == "leg")$legibility) # avg legibility of legible sentences
 mean(filter(leg,isLeg == "ill")$legibility) # avg legibility of illegible sentences
 
 
-# which(df_main$fileName == "crit_08_ill_sent_113.png" & df_main$Question == "leg" & !is.na(df_main$Data))
-# mean(as.numeric(df_main$Data[which(df_main$fileName == "crit_08_ill_sent_113.png" & df_main$Question == "leg" & !is.na(df_main$Data))]))
-
 
 # CONFIDENCE FOR EACH PHOTO
+conf <- data.frame(photo=uniqueNames,isLeg = isLeg, confidence = 0)
+for (i in 1:nrow(conf)) { # go through the rows
+  curFileName <- conf$photo[i]
+  conf$confidence[i] <- mean(as.numeric(df_main$Data[which(df_main$fileName == curFileName & df_main$Question == "conf" & !is.na(df_main$Data))]))
+}
+conf$confidence <- round(conf$confidence,2)
+conf
+mean(filter(conf,isLeg == "leg")$confidence) # avg confidence of legible sentences
+mean(filter(conf,isLeg == "ill")$confidence) # avg confidence of illegible sentences
 
 
 
 # LEGIBILITY OF EACH SENTENCE
 
 
+
+
 # CONFIDENCE FOR EACH SENTENCE
+
+
+
+
+
 
 
 # PERCENTAGE LITERAL WORD PER SENTENCE (while having context correct)
