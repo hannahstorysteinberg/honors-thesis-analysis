@@ -39,9 +39,16 @@ df_demo <- filter(df,Phase == "demographics")
 # LEGIBILITY OF EACH PHOTO
 #make negative if supposed to be ill? 
 head(df_main)
-leg <- data.frame(photo = unique(df$fileName), legibility = NA, number = NA) # go through and add all the legibility scores and one to number, then divide legibility by number
-
-
+leg <- data.frame(photo = unique(df$fileName), legibility = 0, number = 0) # go through and add all the legibility scores and one to number, then divide legibility by number
+for (i in 1:nrow(df_main)) { # go through the rows
+  if (df$Question == "leg") { # if the question is about legibility
+    photoName <- (df$fileName)[i] # get the row photo name
+    index <- which(leg$photo = photoName) # figure out which row in leg is that photo
+    leg[i,2] <- leg[i,2] + (df$Data)[i] # add the legibility scores
+    leg[i,3] <- leg[i,3] + 1 # add to the total number
+  }
+}
+leg <- mutate(leg, avgLeg = )
 
 
 
