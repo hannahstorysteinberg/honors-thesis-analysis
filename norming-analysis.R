@@ -1,5 +1,6 @@
 library(readr)
 library(dplyr)
+library(stringr)
 res <- read_csv(file = "results.csv",col_names = FALSE)
 df <- res
 head(df)
@@ -21,4 +22,6 @@ df <- select(df,-c(B,C,D,E,G)) # remove unnessesary columns
 times <- unique(df[,"A"])[[1]]
 length(times)
 length(list_of_names)
-cbind(list_of_names,times)
+key <- setNames(list_of_names,times)
+
+df$A <- str_replace_all(df$A, key)
