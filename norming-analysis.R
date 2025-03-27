@@ -38,19 +38,23 @@ df_demo <- filter(df,Phase == "demographics")
 
 # LEGIBILITY OF EACH PHOTO
 #make negative if supposed to be ill? 
+
 head(df_main)
-leg <- data.frame(photo = unique(df$fileName), legibility = 0, number = 0) # go through and add all the legibility scores and one to number, then divide legibility by number
+leg <- data.frame(photo = unique(df_main$fileName), legibility = 0, number = 0) # go through and add all the legibility scores and one to number, then divide legibility by number
 for (i in 1:nrow(df_main)) { # go through the rows
-  if (df$Question == "leg") { # if the question is about legibility
-    photoName <- (df$fileName)[i] # get the row photo name
-    index <- which(leg$photo = photoName) # figure out which row in leg is that photo
-    leg[i,2] <- leg[i,2] + (df$Data)[i] # add the legibility scores
-    leg[i,3] <- leg[i,3] + 1 # add to the total number
+  if ((df_main$Question)[i] == "leg" && !is.na((df_main$Data))[i]) { # if the question is about legibility and the answer is not missing
+    photoName <- (df_main$fileName)[i] # get the row photo name
+    index <- which(leg$photo == photoName) # figure out which row in leg is that photo
+    ans <- as.numeric((df_main$Data)[i])
+    leg[index,2] <- leg[index,2] + ans # add the legibility scores
+    leg[index,3] <- leg[index,3] + 1 # add to the total number
   }
 }
-leg <- mutate(leg, avgLeg = )
+leg <- mutate(leg, avgLeg = legibility / number)
 
 
+# which(df_main$fileName == "crit_08_ill_sent_113.png" & df_main$Question == "leg" & !is.na(df_main$Data))
+# mean(as.numeric(df_main$Data[which(df_main$fileName == "crit_08_ill_sent_113.png" & df_main$Question == "leg" & !is.na(df_main$Data))]))
 
 
 # CONFIDENCE FOR EACH PHOTO
