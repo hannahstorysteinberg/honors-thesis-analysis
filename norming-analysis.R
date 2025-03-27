@@ -26,6 +26,6 @@ key <- setNames(list_of_names,times)
 
 df$A <- str_replace_all(df$A, key)
 df <- filter(df,!(F == "instructions" | F == "secondpage")) # they all consented and have native english so can remove that part
-
-
+colnames(df) <- c("Name","Phase","TypeOption","Question","TypeChoice","Data","Timing","Num","Item","Group","isCrit","isLeg","isSent","isMain","sentNum","text","author","fileName")
+head(df)
 
