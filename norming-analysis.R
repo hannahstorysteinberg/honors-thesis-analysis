@@ -31,26 +31,26 @@ colnames(df) <- c("Name","Phase","TypeOption","Question","TypeChoice","Data","Ti
 head(df)
 
 # SPLIT INTO DEMOGRAPHICS AND MAIN STUDY
-df_main <- filter(df,!(Phase == "demographics"))
+df_main <- filter(df,Phase == "main")
 df_demo <- filter(df,Phase == "demographics")
-
+df_gender <- filter(df,Phase == "extra")
 
 
 # LEGIBILITY OF EACH PHOTO
 #make negative if supposed to be ill? 
 
 head(df_main)
-leg <- data.frame(photo = unique(df_main$fileName), legibility = 0, number = 0) # go through and add all the legibility scores and one to number, then divide legibility by number
-for (i in 1:nrow(df_main)) { # go through the rows
-  if ((df_main$Question)[i] == "leg" && !is.na((df_main$Data))[i]) { # if the question is about legibility and the answer is not missing
-    photoName <- (df_main$fileName)[i] # get the row photo name
-    index <- which(leg$photo == photoName) # figure out which row in leg is that photo
-    ans <- as.numeric((df_main$Data)[i])
-    leg[index,2] <- leg[index,2] + ans # add the legibility scores
-    leg[index,3] <- leg[index,3] + 1 # add to the total number
-  }
+uniqueNames <- unique(df_main$fileName)
+isLeg <- ifelse(str_detect(leg$photo,"leg"),"leg","ill")
+leg <- data.frame(photo = uniqueNames, isLeg = isLeg,legibility = 0)
+for (i in 1:nrow(leg)) { # go through the rows
+  curFileName <- leg$photo[i]
+  leg$legibility[i] <- mean(as.numeric(df_main$Data[which(df_main$fileName == curFileName & df_main$Question == "leg" & !is.na(df_main$Data))]))
 }
-leg <- mutate(leg, avgLeg = legibility / number)
+leg$legibility <- round(leg$legibility,2)
+leg
+mean(filter(leg,isLeg == "leg")$legibility) # avg legibility of legibile sentences
+mean(filter(leg,isLeg == "ill")$legibility) # avg legibility of illegible sentences
 
 
 # which(df_main$fileName == "crit_08_ill_sent_113.png" & df_main$Question == "leg" & !is.na(df_main$Data))
@@ -72,6 +72,10 @@ leg <- mutate(leg, avgLeg = legibility / number)
 
 
 # PERCENTAGE NONLITERAL WORD PER SENTENCE (while having context correct)
+
+
+# GENDER STUFF
+head(df_gender)
 
 
 # DEMOGRAPHICS
