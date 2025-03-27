@@ -26,6 +26,31 @@ key <- setNames(list_of_names,times)
 
 df$A <- str_replace_all(df$A, key)
 df <- filter(df,!(F == "instructions" | F == "secondpage")) # they all consented and have native english so can remove that part
+df <- select(df,-X)
 colnames(df) <- c("Name","Phase","TypeOption","Question","TypeChoice","Data","Timing","Num","Item","Group","isCrit","isLeg","isSent","isMain","sentNum","text","author","fileName")
 head(df)
 
+# SPLIT INTO DEMOGRAPHICS AND MAIN STUDY
+df_main <- filter(df,!(Phase == "demographics"))
+df_demo <- filter(df,Phase == "demographics")
+
+
+
+# LEGIBILITY OF EACH PHOTO
+
+
+
+# CONFIDENCE FOR EACH PHOTO
+
+
+
+# PERCENTAGE LITERAL WORD PER SENTENCE (while having context correct)
+
+
+
+# PERCENTAGE NONLITERAL WORD PER SENTENCE (while having context correct)
+
+
+# DEMOGRAPHICS
+df_demo <- select(df_demo,c("Name","Phase","TypeOption","Question","TypeChoice","Data"))
+head(df_demo)
