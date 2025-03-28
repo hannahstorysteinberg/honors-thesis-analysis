@@ -156,7 +156,25 @@ df_main_crit_word <- filter(df_main_crit, isSent == "word")
 crit_words_implaus <- c("banks","smell","gold","desk","map","saved","ball","hit","naps","run","blamed","ties","liver","rain","halted","warm","water","hear","dining","meat")
 crit_words_plaus <- c("barks","swell","mold","disk","mop","sawed","mall","lit","nags","sun","flamed","tics","liner","gain","halved","warn","wafer","near","pining","moat")
 
+df_main_crit_sent_q1 <- filter(df_main_crit_sent, Question == "q1")
 
+#legible
+df_main_crit_sent_q1_leg <- filter(df_main_crit_sent_q1, isLeg == "leg")
+
+perc_crit_sent_leg <- data.frame(word = 1:20, percentage_literal = 0, percentage_nonliteral = 0, wrong = 0)
+for (i in 1:nrow(perc_crit_sent_leg)) {
+  cur_crit_word_implaus <- crit_words_implaus[i]
+  cur_crit_word_plaus <- crit_words_plaus[i]
+  
+  
+  perc_crit_sent_leg$percentage_literal[i] <- 
+  perc_crit_sent_leg$percentage_nonliteral[i] <- 
+  perc_crit_sent_leg$wrong[i] <- 
+}
+perc_crit_sent_leg
+
+
+#illegible
 
 
 # PER CRITICAL WORD, PERCENTAGE CORRECT SPLIT BY LEGIBILITY
