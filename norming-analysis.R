@@ -146,9 +146,9 @@ perc_fill
 
 
 
-# PER SENTENCE PERCENTAGE LITERAL WORD, NON LITERAL WORD, AND OTHER WORD, WHILE HAVING CONTEXT CORRECT, ALL SPLIT BY LEGIBILITY
-# idea: match each word then *. in between, so need to match all words but can have an extra word inbetween which is the critical one
-# so check if every word in text is in data, then determine about the critical word if plaus, implaus, or other
+# PER SENTENCE PERCENTAGE LITERAL WORD, NON LITERAL WORD, AND OTHER WORD, ALL SPLIT BY LEGIBILITY 
+# (WHILE HAVING CONTEXT CORRECT???)
+
 
 
 df_main_crit <- filter(df_main, isCrit == "crit")
@@ -196,8 +196,10 @@ for (i in 1:nrow(perc_crit_sent_ill)) {
 round(perc_crit_sent_ill,2)
 
 
-
-
+# PERCENTAGE CONTEXT CORRECT
+# idea: match each word then *. in between, so need to match all words but can have an extra word inbetween which is the critical one
+# so check if every word in text is in data, then determine about the critical word if plaus, implaus, or other
+df_main_crit
 
 
 # PER CRITICAL WORD, PERCENTAGE CORRECT SPLIT BY LEGIBILITY
@@ -212,6 +214,7 @@ for (i in 1:nrow(perc_crit_word)) {
   perc_crit_word$percentage_ill[i] <- mean(df_main_crit_word_q1$Data[which(df_main_crit_word_q1$sentNum == i & df_main_crit_word_q1$isLeg == "ill")] == df_main_crit_word_q1$text[which(df_main_crit_word_q1$sentNum == i & df_main_crit_word_q1$isLeg == "ill")])
 }
 perc_crit_word
+
 
 
 
