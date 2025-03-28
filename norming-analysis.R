@@ -42,35 +42,35 @@ df_gender <- filter(df,Phase == "extra")
 head(df_main)
 uniqueNames <- unique(df_main$fileName)
 isLeg <- ifelse(str_detect(leg$photo,"leg"),"leg","ill")
-leg <- data.frame(photo = uniqueNames, isLeg = isLeg,legibility = 0)
-for (i in 1:nrow(leg)) { # go through the rows
-  curFileName <- leg$photo[i]
-  leg$legibility[i] <- mean(as.numeric(df_main$Data[which(df_main$fileName == curFileName & df_main$Question == "leg" & !is.na(df_main$Data))]))
+leg_photo <- data.frame(photo = uniqueNames, isLeg = isLeg,legibility = 0)
+for (i in 1:nrow(leg_photo)) { # go through the rows
+  curFileName <- leg_photo$photo[i]
+  leg_photo$legibility[i] <- mean(as.numeric(df_main$Data[which(df_main$fileName == curFileName & df_main$Question == "leg" & !is.na(df_main$Data))]))
 }
-leg$legibility <- round(leg$legibility,2)
-leg
-mean(filter(leg,isLeg == "leg")$legibility) # avg legibility of legible sentences
-mean(filter(leg,isLeg == "ill")$legibility) # avg legibility of illegible sentences
+leg_photo$legibility <- round(leg_photo$legibility,2)
+leg_photo
+mean(filter(leg_photo,isLeg == "leg")$legibility) # avg legibility of legible sentences
+mean(filter(leg_photo,isLeg == "ill")$legibility) # avg legibility of illegible sentences
 
 
 
 # CONFIDENCE FOR EACH PHOTO
-conf <- data.frame(photo=uniqueNames,isLeg = isLeg, confidence = 0)
-for (i in 1:nrow(conf)) { # go through the rows
-  curFileName <- conf$photo[i]
-  conf$confidence[i] <- mean(as.numeric(df_main$Data[which(df_main$fileName == curFileName & df_main$Question == "conf" & !is.na(df_main$Data))]))
+conf_photo <- data.frame(photo=uniqueNames,isLeg = isLeg, confidence = 0)
+for (i in 1:nrow(conf_photo)) { # go through the rows
+  curFileName <- conf_photo$photo[i]
+  conf_photo$confidence[i] <- mean(as.numeric(df_main$Data[which(df_main$fileName == curFileName & df_main$Question == "conf" & !is.na(df_main$Data))]))
 }
-conf$confidence <- round(conf$confidence,2)
-conf
-mean(filter(conf,isLeg == "leg")$confidence) # avg confidence of legible sentences
-mean(filter(conf,isLeg == "ill")$confidence) # avg confidence of illegible sentences
+conf_photo$confidence <- round(conf_photo$confidence,2)
+conf_photo
+mean(filter(conf_photo,isLeg == "leg")$confidence) # avg confidence of legible sentences
+mean(filter(conf_photo,isLeg == "ill")$confidence) # avg confidence of illegible sentences
 
 
 
 # LEGIBILITY OF EACH SENTENCE
 # using sentNum, but need to remove the first underscore
 df_main$sentNum <- as.numeric(substr(df_main$sentNum,2,3)) # remove the first character with is an underscore
-
+leg_sent <- 
 
 
 # CONFIDENCE FOR EACH SENTENCE
