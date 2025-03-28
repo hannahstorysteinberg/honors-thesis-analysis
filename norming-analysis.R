@@ -1,7 +1,7 @@
 library(readr)
 library(dplyr)
 library(stringr)
-res <- read_csv(file = "results.csv",col_names = FALSE)
+res <- read_csv(file = "results.csv",col_names = FALSE) # kendra black was removed prior to this csv
 df <- res
 head(df)
 colnames(df) <- LETTERS[1:24] # like the google sheet
@@ -67,13 +67,36 @@ mean(filter(conf_photo,isLeg == "ill")$confidence) # avg confidence of illegible
 
 
 
-# LEGIBILITY OF EACH SENTENCE
+# LEGIBILITY OF EACH SENTENCE OVERALL
 # using sentNum, but need to remove the first underscore
-df_main$sentNum <- as.numeric(substr(df_main$sentNum,2,3)) # remove the first character with is an underscore
-leg_sent <- 
+df_main$sentNum <- as.numeric(gsub("_","",df_main$sentNum)) # remove the first character with is an underscore
+leg_sent <- data.frame(sentence=1:80,legibility=0)
+for (i in 1:nrow(leg_sent)) {
+  leg_sent$legibility[i] <- mean(as.numeric(df_main$Data[which(df_main$sentNum == i & df_main$Question == "leg" & !is.na(df_main$Data))]))
+}
+leg_sent$legibility <- round(leg_sent$legibility,2)
+leg_sent
+mean(filter(leg_sent,sentence > 20)$legibility) # avg legibility of fillers, which are all supposed to be legible
 
 
-# CONFIDENCE FOR EACH SENTENCE
+## CRITICAL SPLIT BY LEGIBILITY
+leg_sent_crit <- data.frame(sentence=1:20,legibility_leg=0,legibility_ill=0)
+for (i in 1:nrow(leg_sent_crit)) {
+  leg_sent_crit$legibility_leg[i] <- mean(as.numeric(df_main$Data[which(df_main$sentNum == i & df_main$Question == "leg" & !is.na(df_main$Data) & df_main$isLeg == "leg")]))
+  leg_sent_crit$legibility_ill[i] <- mean(as.numeric(df_main$Data[which(df_main$sentNum == i & df_main$Question == "leg" & !is.na(df_main$Data) & df_main$isLeg == "ill")]))
+  
+}
+leg_sent_crit$legibility_leg <- round(leg_sent_crit$legibility_leg,2)
+leg_sent_crit$legibility_ill <- round(leg_sent_crit$legibility_ill,2)
+leg_sent_crit <- mutate(leg_sent_crit,difference = legibility_leg - legibility_ill)
+leg_sent_crit
+
+
+
+# CONFIDENCE FOR EACH SENTENCE OVERALL
+
+
+## CRITICAL SPLIT BY LEGIBILITY
 
 
 
