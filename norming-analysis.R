@@ -104,7 +104,16 @@ mean(filter(conf_sent,sentence > 20)$confidence) # avg confidence of fillers, wh
 
 
 ## CRITICAL SPLIT BY LEGIBILITY
-
+conf_sent_crit <- data.frame(sentence=1:20,confidence_leg=0,confidence_ill=0)
+for (i in 1:nrow(conf_sent_crit)) {
+  conf_sent_crit$confidence_leg[i] <- mean(as.numeric(df_main$Data[which(df_main$sentNum == i & df_main$Question == "conf" & !is.na(df_main$Data) & df_main$isLeg == "leg")]))
+  conf_sent_crit$confidence_ill[i] <- mean(as.numeric(df_main$Data[which(df_main$sentNum == i & df_main$Question == "conf" & !is.na(df_main$Data) & df_main$isLeg == "ill")]))
+  
+}
+conf_sent_crit$confidence_leg <- round(conf_sent_crit$confidence_leg,2)
+conf_sent_crit$confidence_ill <- round(conf_sent_crit$confidence_ill,2)
+conf_sent_crit <- mutate(conf_sent_crit,difference = confidence_leg - confidence_ill)
+conf_sent_crit
 
 
 
