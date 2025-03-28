@@ -167,7 +167,8 @@ leg_photo_word # per photo
 
 perc_crit_word <- data.frame(word = 1:20,percentage_leg = 0, percentage_ill = 0)
 for (i in 1:nrow(perc_crit_word)) {
-  perc_crit_word$percentage[i] <- mean(df_main_crit_word_q1$Data[which(df_main_crit_word_q1$sentNum == i)] == df_main_crit_word_q1$text[which(df_main_crit_word_q1$sentNum == i)])
+  perc_crit_word$percentage_leg[i] <- mean(df_main_crit_word_q1$Data[which(df_main_crit_word_q1$sentNum == i & df_main_crit_word_q1$isLeg == "leg")] == df_main_crit_word_q1$text[which(df_main_crit_word_q1$sentNum == i & df_main_crit_word_q1$isLeg == "leg")])
+  perc_crit_word$percentage_ill[i] <- mean(df_main_crit_word_q1$Data[which(df_main_crit_word_q1$sentNum == i & df_main_crit_word_q1$isLeg == "ill")] == df_main_crit_word_q1$text[which(df_main_crit_word_q1$sentNum == i & df_main_crit_word_q1$isLeg == "ill")])
 }
 perc_crit_word
 
