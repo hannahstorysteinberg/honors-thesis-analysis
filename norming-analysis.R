@@ -182,6 +182,24 @@ round(perc_crit_sent_leg,2)
 #illegible
 df_main_crit_sent_q1_ill <- filter(df_main_crit_sent_q1, isLeg == "ill")
 
+perc_crit_sent_ill <- data.frame(sentence = 1:20, percentage_literal = 0, percentage_nonliteral = 0, wrong = 0)
+for (i in 1:nrow(perc_crit_sent_ill)) {
+  cur_crit_word_implaus <- crit_words_implaus[i]
+  cur_crit_word_plaus <- crit_words_plaus[i]
+  curSentNum <- i
+  cur_df <- filter(df_main_crit_sent_q1_ill, sentNum == curSentNum)
+  
+  perc_crit_sent_ill$percentage_literal[i] <- mean(grepl(cur_crit_word_implaus,cur_df$Data)) # literal, implausible word
+  perc_crit_sent_ill$percentage_nonliteral[i] <- mean(grepl(cur_crit_word_plaus,cur_df$Data)) # non literal, plausible word
+  perc_crit_sent_ill$wrong[i] <- 1 - mean(grepl(cur_crit_word_implaus,cur_df$Data)) - mean(grepl(cur_crit_word_plaus,cur_df$Data)) # any other word
+}
+round(perc_crit_sent_ill,2)
+
+
+
+
+
+
 # PER CRITICAL WORD, PERCENTAGE CORRECT SPLIT BY LEGIBILITY
 df_main_crit_word_q1 <- filter(df_main_crit_word,Question == "q1")
 head(df_main_crit_word_q1)
