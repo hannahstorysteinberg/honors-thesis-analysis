@@ -127,10 +127,13 @@ for (i in 1:nrow(perc_fill)) {
 
 
 # PERCENTAGE LITERAL WORD PER SENTENCE OVERALL (while having context correct)
+df_main_crit <- filter(df_main, isCrit = "crit")
+
+
 # replace %2C with ,
-df_main$Data <- gsub("%2C",",",df_main$Data)
+df_main_crit$Data <- gsub("%2C",",",df_main_crit$Data)
 # remove periods cuz
-df_main$Data <- gsub(".","",df_main$Data)
+df_main_crit$Data <- gsub(".","",df_main_crit$Data)
 crit_words_implaus <- c("banks","smell","gold","desk","map","saved","ball","hit","naps","run","blamed","ties","liver","rain","halted","warm","water","hear","dining","meat")
 crit_words_plaus <- c("barks","swell","mold","disk","mop","sawed","mall","lit","nags","sun","flamed","tics","liner","gain","halved","warn","wafer","near","pining","moat")
 
