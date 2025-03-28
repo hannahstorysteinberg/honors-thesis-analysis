@@ -41,7 +41,7 @@ df_gender <- filter(df,Phase == "extra")
 
 head(df_main)
 uniqueNames <- unique(df_main$fileName)
-isLeg <- ifelse(str_detect(leg$photo,"leg"),"leg","ill")
+isLeg <- ifelse(str_detect(uniqueNames,"leg"),"leg","ill")
 leg_photo <- data.frame(photo = uniqueNames, isLeg = isLeg,legibility = 0)
 for (i in 1:nrow(leg_photo)) { # go through the rows
   curFileName <- leg_photo$photo[i]
@@ -117,9 +117,15 @@ conf_sent_crit
 
 
 # PERCENTAGE FILLER CORRECT BY SENTENCE
+df_main$Data[is.na(df_main$Data)] <- "" # replace all NA values with an empty string so can compare with text
+df_main$Data <- gsub("&2C",",",df_main$Data) # replace %2C with ,
+df_main$Data <- gsub(".","",df_main$Data) # remove periods because they are not important
+
+
+df_main_fill <- filter(df_main,isCrit == "fill" & Question == "q1")
 perc_fill <- data.frame(sentence=20:80,percentage=0)
 for (i in 1:nrow(perc_fill)) {
-  
+  per_fill$percentage[i] <- 
 }
 
 
@@ -128,12 +134,10 @@ for (i in 1:nrow(perc_fill)) {
 
 # PERCENTAGE LITERAL WORD PER SENTENCE OVERALL (while having context correct)
 df_main_crit <- filter(df_main, isCrit = "crit")
+# NOTE TO SELF: SEPARATE OUT WORDS AND DO LEGIBILITY/CONFIDENCE FOR WORDS BY PHOTO AND SENTENCE
 
 
-# replace %2C with ,
-df_main_crit$Data <- gsub("%2C",",",df_main_crit$Data)
-# remove periods cuz
-df_main_crit$Data <- gsub(".","",df_main_crit$Data)
+
 crit_words_implaus <- c("banks","smell","gold","desk","map","saved","ball","hit","naps","run","blamed","ties","liver","rain","halted","warm","water","hear","dining","meat")
 crit_words_plaus <- c("barks","swell","mold","disk","mop","sawed","mall","lit","nags","sun","flamed","tics","liner","gain","halved","warn","wafer","near","pining","moat")
 
