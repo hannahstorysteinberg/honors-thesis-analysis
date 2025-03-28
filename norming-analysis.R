@@ -119,25 +119,37 @@ conf_sent_crit
 # PERCENTAGE FILLER CORRECT BY SENTENCE
 df_main$Data <- gsub("%2C","",df_main$Data) # replace %2C (commas) with nothing because they are not important
 df_main$Data <- gsub("\\.","",df_main$Data) # remove periods because they are not important
+df_main$Data <- gsub("’","",df_main$Data) # remove weird apostrophes because they mess everything up
+df_main$Data <- gsub("'","",df_main$Data) # remove normal apostrophes because they mess everything up
+
 
 # do the same for text column
 df_main$text <- gsub("%2C","",df_main$text) # replace %2C (commas) with nothing because they are not important
 df_main$text <- gsub("\\.","",df_main$text) # remove periods because they are not important
+df_main$text <- gsub("’","",df_main$text) # remove weird apostrophes because they mess everything up
+df_main$text <- gsub("'","",df_main$text) # remove apostrophes because they mess everything up
 
 
 df_main_fill <- filter(df_main,isCrit == "fill")
 df_main_fill_q1 <- filter(df_main_fill,Question == "q1")
-perc_fill <- data.frame(sentence=20:80,percentage=0)
-for (i in 1:nrow(perc_fill)) {
-  per_fill$percentage[i] <- 
-}
+mean(df_main_fill_q1$Data == df_main_fill_q1$text) # overall accuracy
 
+
+perc_fill <- data.frame(sentence=21:80,percentage=0)
+for (i in 1:nrow(perc_fill)) {
+  curSentNum <- i + 20 # fillers start at 21
+  perc_fill$percentage[i] <- mean(df_main_fill_q1$Data[which(df_main_fill_q1$sentNum == curSentNum)] == df_main_fill_q1$text[which(df_main_fill_q1$sentNum == curSentNum)])
+}
+perc_fill
 
 
 
 
 # PERCENTAGE LITERAL WORD PER SENTENCE OVERALL (while having context correct)
 df_main_crit <- filter(df_main, isCrit = "crit")
+
+
+
 # NOTE TO SELF: SEPARATE OUT WORDS AND DO LEGIBILITY/CONFIDENCE FOR WORDS BY PHOTO AND SENTENCE
 
 
