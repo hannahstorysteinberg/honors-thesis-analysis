@@ -94,6 +94,13 @@ leg_sent_crit
 
 
 # CONFIDENCE FOR EACH SENTENCE OVERALL
+conf_sent <- data.frame(sentence=1:80,confidence=0)
+for (i in 1:nrow(conf_sent)) {
+  conf_sent$confidence[i] <- mean(as.numeric(df_main$Data[which(df_main$sentNum == i & df_main$Question == "conf" & !is.na(df_main$Data))]))
+}
+conf_sent$confidence <- round(conf_sent$confidence,2)
+conf_sent
+mean(filter(conf_sent,sentence > 20)$confidence) # avg confidence of fillers, which are all supposed to be legible
 
 
 ## CRITICAL SPLIT BY LEGIBILITY
