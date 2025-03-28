@@ -121,13 +121,14 @@ df_main$Data <- gsub("%2C","",df_main$Data) # replace %2C (commas) with nothing 
 df_main$Data <- gsub("\\.","",df_main$Data) # remove periods because they are not important
 df_main$Data <- gsub("’","",df_main$Data) # remove weird apostrophes because they mess everything up
 df_main$Data <- gsub("'","",df_main$Data) # remove normal apostrophes because they mess everything up
-
+df_main$Data <- tolower(df_main$Data) # make all same case
 
 # do the same for text column
 df_main$text <- gsub("%2C","",df_main$text) # replace %2C (commas) with nothing because they are not important
 df_main$text <- gsub("\\.","",df_main$text) # remove periods because they are not important
 df_main$text <- gsub("’","",df_main$text) # remove weird apostrophes because they mess everything up
 df_main$text <- gsub("'","",df_main$text) # remove apostrophes because they mess everything up
+df_main$text <- tolower(df_main$text) # make all same case
 
 
 df_main_fill <- filter(df_main,isCrit == "fill")
@@ -145,26 +146,34 @@ perc_fill
 
 
 
-# PERCENTAGE LITERAL WORD PER SENTENCE OVERALL (while having context correct)
-df_main_crit <- filter(df_main, isCrit = "crit")
-
-
-
-# NOTE TO SELF: SEPARATE OUT WORDS AND DO LEGIBILITY/CONFIDENCE FOR WORDS BY PHOTO AND SENTENCE
+# PER SENTENCE PERCENTAGE LITERAL WORD, NON LITERAL WORD, AND OTHER WORD, WHILE HAVING CONTEXT CORRECT, ALL SPLIT BY LEGIBILITY
+df_main_crit <- filter(df_main, isCrit == "crit")
+df_main_crit_sent <- filter(df_main_crit, isSent == "sent")
+df_main_crit_word <- filter(df_main_crit, isSent == "word")
 
 
 
 crit_words_implaus <- c("banks","smell","gold","desk","map","saved","ball","hit","naps","run","blamed","ties","liver","rain","halted","warm","water","hear","dining","meat")
 crit_words_plaus <- c("barks","swell","mold","disk","mop","sawed","mall","lit","nags","sun","flamed","tics","liner","gain","halved","warn","wafer","near","pining","moat")
 
-# CRITICAL SPLIT BY LEGIBILITY
-
-
-# PERCENTAGE NONLITERAL WORD PER SENTENCE (while having context correct)
 
 
 
-# PERCENTAGE SPLIT BY LEGIBILITY
+# PER CRITICAL WORD, PERCENTAGE CORRECT SPLIT BY LEGIBILITY
+df_main_crit_word_q1 <- filter(df_main_crit_word,Question == "q1")
+head(df_main_crit_word_q1)
+leg_photo_word <- filter(leg_photo,grepl("*.word*.",photo))
+leg_photo_word # per photo
+
+perc_crit_word <- data.frame(word = 1:20,percentage_leg = 0, percentage_ill = 0)
+for (i in 1:nrow(perc_crit_word)) {
+  perc_crit_word$percentage[i] <- mean(df_main_crit_word_q1$Data[which(df_main_crit_word_q1$sentNum == i)] == df_main_crit_word_q1$text[which(df_main_crit_word_q1$sentNum == i)])
+}
+perc_crit_word
+
+
+
+
 
 # GENDER STUFF
 head(df_gender)
