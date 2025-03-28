@@ -199,9 +199,23 @@ round(perc_crit_sent_ill,2)
 # PERCENTAGE CONTEXT CORRECT
 # idea: match each word then *. in between, so need to match all words but can have an extra word inbetween which is the critical one
 # so check if every word in text is in data, then determine about the critical word if plaus, implaus, or other
+df_main_crit_q1 <- filter(df_main_crit,Question == "q1" & isSent == "sent")
+df_main_crit_q1$text <- gsub(" ii","",df_main_crit_q1$text) # the pictures actually dont have the ii
+
 perc_context <- data.frame(sentence = 1:20, percentage = 0)
 for(i in 1:nrow(perc_context)) {
+  cur_crit_word_implaus <- crit_words_implaus[i]
+  curSentNum <- i
+  cur_df <- filter(df_main_crit_q1, sentNum == curSentNum)
+  cur_Sent <- cur_df$text[1]
+  splitted <- strsplit(cur_Sent, cur_crit_word_implaus)[[1]]
+  before <- splitted[1]
+  after <- splitted[2]
+  if (is.na(after)) {
+    after <- ""
+  }
   
+  perc_context$percentage[i] <- mean(grepl(before,cur_df$Data) & grepl(after,cur_df$Data))
 }
 round(perc_context,2)
 
