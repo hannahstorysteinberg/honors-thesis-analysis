@@ -187,3 +187,8 @@ df_demo_age <- filter(df_demo, TypeChoice == "age")
 ages <- as.numeric(df_demo_age$Data)
 mean(ages) # for methods
 sd(ages) # for methods
+
+df_demo_gender <- filter(df_demo, TypeChoice == "gender")
+gender <- as.factor(df_demo_gender$Data)
+sum(as.numeric(gender)-1) # number males
+sum(abs(as.numeric(gender)-2)) # number females
