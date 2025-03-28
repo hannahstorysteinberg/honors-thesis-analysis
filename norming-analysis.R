@@ -68,7 +68,8 @@ mean(filter(conf,isLeg == "ill")$confidence) # avg confidence of illegible sente
 
 
 # LEGIBILITY OF EACH SENTENCE
-
+# using sentNum, but need to remove the first underscore
+df_main$sentNum <- as.numeric(substr(df_main$sentNum,2,3)) # remove the first character with is an underscore
 
 
 
