@@ -117,12 +117,16 @@ conf_sent_crit
 
 
 # PERCENTAGE FILLER CORRECT BY SENTENCE
-df_main$Data[is.na(df_main$Data)] <- "" # replace all NA values with an empty string so can compare with text
-df_main$Data <- gsub("&2C",",",df_main$Data) # replace %2C with ,
-df_main$Data <- gsub(".","",df_main$Data) # remove periods because they are not important
+df_main$Data <- gsub("%2C","",df_main$Data) # replace %2C (commas) with nothing because they are not important
+df_main$Data <- gsub("\\.","",df_main$Data) # remove periods because they are not important
+
+# do the same for text column
+df_main$text <- gsub("%2C","",df_main$text) # replace %2C (commas) with nothing because they are not important
+df_main$text <- gsub("\\.","",df_main$text) # remove periods because they are not important
 
 
-df_main_fill <- filter(df_main,isCrit == "fill" & Question == "q1")
+df_main_fill <- filter(df_main,isCrit == "fill")
+df_main_fill_q1 <- filter(df_main_fill,Question == "q1")
 perc_fill <- data.frame(sentence=20:80,percentage=0)
 for (i in 1:nrow(perc_fill)) {
   per_fill$percentage[i] <- 
