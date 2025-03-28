@@ -199,7 +199,11 @@ round(perc_crit_sent_ill,2)
 # PERCENTAGE CONTEXT CORRECT
 # idea: match each word then *. in between, so need to match all words but can have an extra word inbetween which is the critical one
 # so check if every word in text is in data, then determine about the critical word if plaus, implaus, or other
-df_main_crit
+perc_context <- data.frame(sentence = 1:20, percentage = 0)
+for(i in 1:nrow(perc_context)) {
+  
+}
+round(perc_context,2)
 
 
 # PER CRITICAL WORD, PERCENTAGE CORRECT SPLIT BY LEGIBILITY
@@ -213,7 +217,7 @@ for (i in 1:nrow(perc_crit_word)) {
   perc_crit_word$percentage_leg[i] <- mean(df_main_crit_word_q1$Data[which(df_main_crit_word_q1$sentNum == i & df_main_crit_word_q1$isLeg == "leg")] == df_main_crit_word_q1$text[which(df_main_crit_word_q1$sentNum == i & df_main_crit_word_q1$isLeg == "leg")])
   perc_crit_word$percentage_ill[i] <- mean(df_main_crit_word_q1$Data[which(df_main_crit_word_q1$sentNum == i & df_main_crit_word_q1$isLeg == "ill")] == df_main_crit_word_q1$text[which(df_main_crit_word_q1$sentNum == i & df_main_crit_word_q1$isLeg == "ill")])
 }
-perc_crit_word
+round(perc_crit_word,2)
 
 
 
