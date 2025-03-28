@@ -117,15 +117,21 @@ conf_sent_crit
 
 
 
+# PERCENTAGE LITERAL WORD PER SENTENCE OVERALL (while having context correct)
+# replace %2C with ,
+df_main$Data <- gsub("%2C",",",df_main$Data)
+# remove periods cuz
+df_main$Data <- gsub(".","",df_main$Data)
 
 
-
-# PERCENTAGE LITERAL WORD PER SENTENCE (while having context correct)
-
+# CRITICAL SPLIT BY LEGIBILITY
 
 
 # PERCENTAGE NONLITERAL WORD PER SENTENCE (while having context correct)
 
+
+
+# PERCENTAGE SPLIT BY LEGIBILITY
 
 # GENDER STUFF
 head(df_gender)
