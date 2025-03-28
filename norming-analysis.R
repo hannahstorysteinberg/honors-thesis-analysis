@@ -147,6 +147,10 @@ perc_fill
 
 
 # PER SENTENCE PERCENTAGE LITERAL WORD, NON LITERAL WORD, AND OTHER WORD, WHILE HAVING CONTEXT CORRECT, ALL SPLIT BY LEGIBILITY
+# idea: match each word then *. in between, so need to match all words but can have an extra word inbetween which is the critical one
+# so check if every word in text is in data, then determine about the critical word if plaus, implaus, or other
+
+
 df_main_crit <- filter(df_main, isCrit == "crit")
 df_main_crit_sent <- filter(df_main_crit, isSent == "sent")
 df_main_crit_word <- filter(df_main_crit, isSent == "word")
@@ -161,21 +165,22 @@ df_main_crit_sent_q1 <- filter(df_main_crit_sent, Question == "q1")
 #legible
 df_main_crit_sent_q1_leg <- filter(df_main_crit_sent_q1, isLeg == "leg")
 
-perc_crit_sent_leg <- data.frame(word = 1:20, percentage_literal = 0, percentage_nonliteral = 0, wrong = 0)
+perc_crit_sent_leg <- data.frame(sentence = 1:20, percentage_literal = 0, percentage_nonliteral = 0, wrong = 0)
 for (i in 1:nrow(perc_crit_sent_leg)) {
   cur_crit_word_implaus <- crit_words_implaus[i]
   cur_crit_word_plaus <- crit_words_plaus[i]
+  curSentNum <- i
+  cur_df <- filter(df_main_crit_sent_q1_leg, sentNum == curSentNum)
   
-  
-  perc_crit_sent_leg$percentage_literal[i] <- 
-  perc_crit_sent_leg$percentage_nonliteral[i] <- 
-  perc_crit_sent_leg$wrong[i] <- 
+  perc_crit_sent_leg$percentage_literal[i] <- mean(grepl(cur_crit_word_implaus,cur_df$Data)) # literal, implausible word
+  perc_crit_sent_leg$percentage_nonliteral[i] <- mean(grepl(cur_crit_word_plaus,cur_df$Data)) # non literal, plausible word
+  perc_crit_sent_leg$wrong[i] <- 1 - mean(grepl(cur_crit_word_implaus,cur_df$Data)) - mean(grepl(cur_crit_word_plaus,cur_df$Data)) # any other word
 }
-perc_crit_sent_leg
+round(perc_crit_sent_leg,2)
 
 
 #illegible
-
+df_main_crit_sent_q1_ill <- filter(df_main_crit_sent_q1, isLeg == "ill")
 
 # PER CRITICAL WORD, PERCENTAGE CORRECT SPLIT BY LEGIBILITY
 df_main_crit_word_q1 <- filter(df_main_crit_word,Question == "q1")
