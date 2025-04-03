@@ -1,7 +1,7 @@
 library(readr)
 library(dplyr)
 library(stringr)
-res <- read_csv(file = "results.csv",col_names = FALSE) # kendra black was removed prior to this csv
+res <- read_csv(file = "results.csv",col_names = FALSE) # kendra black and second philip naef was removed prior to this csv
 df <- res
 head(df)
 colnames(df) <- LETTERS[1:24] # like the google sheet
