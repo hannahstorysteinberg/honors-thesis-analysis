@@ -260,6 +260,25 @@ for (i in 1:nrow(auth)) {
 
 round(auth,2) # larger the number, more male the author's writing is 
 
+
+
+# gender by photo
+head(df_gender_q)
+uniqueNames <- unique(df_gender_q$fileName)
+isLeg <- ifelse(str_detect(uniqueNames,"leg"),"leg","ill")
+gender_photo <- data.frame(photo = uniqueNames, isLeg = isLeg,gender = 0)
+
+for (i in 1:nrow(gender_photo)) {
+  cur_photo <- gender_photo$photo[i]
+  cur_df <- filter(df_gender_q, fileName == cur_photo)
+  gender_photo$gender[i] <- mean(cur_df$Data)
+  
+}
+gender_photo$gender <- round(gender_photo$gender,2)
+gender_photo
+mean(filter(gender_photo,isLeg == "leg")$gender)
+
+
 # DEMOGRAPHICS
 df_demo <- select(df_demo,c("Name","Phase","TypeOption","Question","TypeChoice","Data"))
 head(df_demo)
