@@ -250,6 +250,9 @@ df_gender_q$Data <- gsub("Almost definitely a Woman", 0,df_gender_q$Data)
 df_gender_q$Data <- as.numeric(df_gender_q$Data)
 df_gender_q$sentNum <- as.numeric(gsub("_","",df_gender_q$sentNum))
 
+
+
+
 authors <- sort(unique(df_gender_q$author))
 auth <- data.frame(authors = 0, sent_num = 0, leg = 0, gender = 0)
 
