@@ -240,6 +240,7 @@ round(perc_crit_word,2)
 
 # GENDER STUFF
 head(df_gender)
+df_main_q1 <- filter(df_main, Question == "q1")
 df_gender_q <- filter(df_gender, Question == "gender")
 df_gender_q$Data <- gsub("Almost definitely a Man", 4,df_gender_q$Data)
 df_gender_q$Data <- gsub("Probably a Man", 3,df_gender_q$Data)
@@ -250,17 +251,35 @@ df_gender_q$Data <- as.numeric(df_gender_q$Data)
 df_gender_q$sentNum <- as.numeric(gsub("_","",df_gender_q$sentNum))
 
 authors <- sort(unique(df_gender_q$author))
+auth <- data.frame(authors = 0, sent_num = 0, leg = 0, gender = 0)
 
-auth <- data.frame(authors = authors, gender = 0) 
+for (i in 1:length(authors)) {
+  cur_author <- authors[i]
+  sentNum <- unique(filter(df_main_q1, author == cur_author)$sentNum)
+  for (j in 1:length(sentNum)) {
+    cur_sent_num <- sentNum[j]
+    cur_leg <- unique(filter(df_main_q1, author == cur_author & sentNum == cur_sent_num)$isLeg)
+    row <- dim(auth)[1]+1
+    auth[row,1] <- cur_author
+    auth[row,2] <- cur_sent_num
+    auth[row,3] <- cur_leg
+    #auth_test[i,1] <- authors[i]
+    
+  }
+}
+
+auth$gender <- 0
+auth <- auth[-1,]
+
 for (i in 1:nrow(auth)) {
   cur_author <- auth$authors[i]
+  cur_sent_num <- auth$sent_num[i]
   cur_df <- filter(df_gender_q, author == cur_author)
   auth$gender[i] <- mean(cur_df$Data)
 }
 
-round(auth,2) # larger the number, more male the author's writing is 
-
-
+auth$gender <- round(auth$gender,2)# larger the number, more male the author's writing is 
+auth
 
 # gender by photo
 head(df_gender_q)
