@@ -284,6 +284,9 @@ for (i in 1:nrow(auth)) {
 auth$gender <- round(auth$gender,2)# larger the number, more male the author's writing is 
 auth
 
+# WORK ON THIS, DOES NOT WORK
+
+
 # gender by photo
 head(df_gender_q)
 uniqueNames <- unique(df_gender_q$fileName)
