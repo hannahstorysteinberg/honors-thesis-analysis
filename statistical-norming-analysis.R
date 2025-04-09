@@ -22,6 +22,7 @@ library(dplyr)
 library(stringr)
 library(lme4)
 library(lmerTest) # stack overflow said this would show p values
+library(ggplot2)
 res <- read_csv(file = "results.csv",col_names = FALSE) # kendra black and second philip naef was removed prior to this csv
 df <- res
 head(df)
@@ -75,11 +76,46 @@ df_main_qleg$sentNum <- as.numeric(gsub("_","",df_main_qleg$sentNum)) # remove t
 # fix data
 df_main_qleg$Data <- as.numeric(df_main_qleg$Data)
 
+
+df_main_qleg$isLeg <- ifelse(df_main_qleg$isLeg == "leg",0,1)
+
+df_main_qleg$isSent <- ifelse(df_main_qleg$isSent == "sent",0,1)
+
+
 model_legible_data <- lmer(Data ~ 1 + isLeg*isSent
                                     + (1 + isLeg*isSent | sentNum)
                                     + (1 + isLeg*isSent | Name),
                                     data = df_main_qleg)
+update(model_legible_data, control = lmerControl(calc.derivs = FALSE))
 summary(model_legible_data)
 
+# PLOT
+ggplot(leg_photo, aes(x = isLeg, y = legibility, fill = isLeg)) +
+  stat_summary(fun = mean, geom = "bar", color = "black", width = 0.6, alpha = 0.7) +
+  stat_summary(fun.data = mean_se, geom = "errorbar", width = 0.2) +
+  geom_jitter(width = 0.15, alpha = 0.6, size = 2, color = "black") +
+  theme_minimal() +
+  labs(y = "Average Rating", x = "Legibility") +
+  theme(legend.position = "none")
 
 
+# DEPENDENT SAMPLES T TEST
+
+#head(df_main)
+uniqueNames <- unique(df_main$fileName)
+isLeg <- ifelse(str_detect(uniqueNames,"leg"),"leg","ill")
+leg_photo <- data.frame(photo = uniqueNames, isLeg = isLeg,legibility = 0)
+for (i in 1:nrow(leg_photo)) { # go through the rows
+  curFileName <- leg_photo$photo[i]
+  leg_photo$legibility[i] <- mean(as.numeric(df_main$Data[which(df_main$fileName == curFileName & df_main$Question == "leg" & !is.na(df_main$Data))]))
+}
+leg_photo$legibility <- round(leg_photo$legibility,2)
+leg_photo
+#mean(filter(leg_photo,isLeg == "leg")$legibility) # avg legibility of legible sentences
+#mean(filter(leg_photo,isLeg == "ill")$legibility) # avg legibility of illegible sentences
+
+
+leg_photo_leg <- filter(leg_photo, isLeg == "leg")$legibility
+leg_photo_ill <- filter(leg_photo, isLeg == "ill")$legibility
+
+t.test(leg_photo_leg,leg_photo_ill,paired=TRUE)
