@@ -20,6 +20,8 @@
 library(readr)
 library(dplyr)
 library(stringr)
+library(lme4)
+library(lmerTest) # stack overflow said this would show p values
 res <- read_csv(file = "results.csv",col_names = FALSE) # kendra black and second philip naef was removed prior to this csv
 df <- res
 head(df)
@@ -59,10 +61,25 @@ df_gender <- filter(df,Phase == "extra")
 # participant is Name
 
 df_main_qleg <- filter(df_main, Question == "leg")
-test <- select(df_main_qleg, c("Name","Phase","Data","isLeg","isSent"))
+df_main_qleg <- select(df_main_qleg, c("Name","Phase","Data","isLeg","isSent","sentNum"))
 
 # set each person to a id so deidentified
 
 key_deidentified <- setNames(as.character(1:length(list_of_names)),list_of_names)
-test$Name <- str_replace_all(test$Name,key_deidentified)
-test$Name <- as.numeric(test$Name)
+df_main_qleg$Name <- str_replace_all(df_main_qleg$Name,key_deidentified)
+df_main_qleg$Name <- as.numeric(df_main_qleg$Name)
+
+# fix sentNum
+df_main_qleg$sentNum <- as.numeric(gsub("_","",df_main_qleg$sentNum)) # remove the first character with is an underscore
+
+# fix data
+df_main_qleg$Data <- as.numeric(df_main_qleg$Data)
+
+model_legible_data <- lmer(Data ~ 1 + isLeg*isSent
+                                    + (1 + isLeg*isSent | sentNum)
+                                    + (1 + isLeg*isSent | Name),
+                                    data = df_main_qleg)
+summary(model_legible_data)
+
+
+
