@@ -17,3 +17,52 @@
 # 
 # Here, condition has 3 levels (filler, legible, illegible), and we can do pairwise comparisons between filler and each of the other two levels.
 
+library(readr)
+library(dplyr)
+library(stringr)
+res <- read_csv(file = "results.csv",col_names = FALSE) # kendra black and second philip naef was removed prior to this csv
+df <- res
+head(df)
+colnames(df) <- LETTERS[1:24] # like the google sheet
+head(df)
+list_of_names <- as.vector(df[which(df[,"J"] == "name"),"K"])[[1]]
+list_of_names
+length(list_of_names)
+length(unique(list_of_names)) # 1 unique name
+list_of_names[duplicated(list_of_names)]
+# philip naef is dup, but it seems to be fine bc he got a different order of words/sentences
+
+
+df <- filter(df, !grepl("^#",A)) # remove all rows that start with a hashtag which are all the comments
+head(df)
+df <- select(df,-c(B,C,D,E,G)) # remove unnessesary columns
+
+# assign each result time number to the name as an id
+times <- unique(df[,"A"])[[1]]
+length(times)
+length(list_of_names)
+key <- setNames(list_of_names,times)
+
+df$A <- str_replace_all(df$A, key)
+df <- filter(df,!(F == "instructions" | F == "secondpage")) # they all consented and have native english so can remove that part
+df <- select(df,-X)
+colnames(df) <- c("Name","Phase","TypeOption","Question","TypeChoice","Data","Timing","Num","Item","Group","isCrit","isLeg","isSent","isMain","sentNum","text","author","fileName")
+head(df)
+
+# SPLIT INTO DEMOGRAPHICS AND MAIN STUDY
+df_main <- filter(df,Phase == "main")
+df_demo <- filter(df,Phase == "demographics")
+df_gender <- filter(df,Phase == "extra")
+
+# we need rating, condition, presentation, sentence, participant
+# rating is data, condition is isLeg, presentation is isSent, sentence is sentNum
+# participant is Name
+
+df_main_qleg <- filter(df_main, Question == "leg")
+test <- select(df_main_qleg, c("Name","Phase","Data","isLeg","isSent"))
+
+# set each person to a id so deidentified
+
+key_deidentified <- setNames(as.character(1:length(list_of_names)),list_of_names)
+test$Name <- str_replace_all(test$Name,key_deidentified)
+test$Name <- as.numeric(test$Name)
