@@ -113,9 +113,23 @@ leg_photo$legibility <- round(leg_photo$legibility,2)
 leg_photo
 #mean(filter(leg_photo,isLeg == "leg")$legibility) # avg legibility of legible sentences
 #mean(filter(leg_photo,isLeg == "ill")$legibility) # avg legibility of illegible sentences
+leg_photo$sentNum <- as.numeric(str_extract(leg_photo$photo,"\\d\\d"))
+
+leg_photo_leg <- arrange(filter(leg_photo, isLeg == "leg"),sentNum)[1:40,] # only take the critical ones
+leg_photo_ill <- arrange(filter(leg_photo, isLeg == "ill"),sentNum)
+
+ratings_leg <- leg_photo_leg$legibility
+ratings_ill <- leg_photo_ill$legibility
 
 
-leg_photo_leg <- filter(leg_photo, isLeg == "leg")$legibility
-leg_photo_ill <- filter(leg_photo, isLeg == "ill")$legibility
+t.test(ratings_leg,ratings_ill,paired=TRUE)
 
-t.test(leg_photo_leg,leg_photo_ill,paired=TRUE)
+
+# RATINGS OF FILLERS
+# In addition, we should also look at the ratings of the fillers to see that they are legible as well. Hopefully they would be rated as more legible than the illegible critical sentences; and I expect them to not be statistically distinguishable from the legible critical sentences. For this, we can run a model just on full sentences (not individual words), and now the random effect is by “picture” (i.e., png file), not “sentence” (because some sentences only have the “filler” condition and some sentences only have the “legible”+”illegible” conditions):
+#   
+#   rating ~ 1 + condition + (1 | sentence) + (1 + condition | participant)
+# 
+# Here, condition has 3 levels (filler, legible, illegible), and we can do pairwise comparisons between filler and each of the other two levels.
+
+# in progress bc I wanted to go to sleep (I am eepy)
