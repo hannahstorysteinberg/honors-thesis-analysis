@@ -31,7 +31,9 @@ filter(df, value == "unchecked") # what to do w people who don't check native en
 df <- filter(df, label != "instructions" & pennname == "q1" | pennname == "demographics")
 df$subj <- as.factor(df$subj)
 
+
 # exclusion critera
+str_detect(paste(df_main$isCrit,collapse=""),"critcrit") # if anyone got 2 criticals in a row
 
 
 
@@ -40,10 +42,13 @@ df$subj <- as.factor(df$subj)
 df_main <- filter(df,pennname == "q1")
 df_demo <- filter(df,pennname == "demographics")
 
-df_main_crit <- filter(df_main, isCrit == "crit")
+
+df_main$sent <- as.numeric(gsub("_","",df_main_crit_q1$sentNum))
 
 
-# df_main_crit_q1$sent <- as.numeric(gsub("_","",df_main_crit_q1$sentNum)) # remove the first character with is an underscore
+# df_main_crit <- filter(df_main, isCrit == "crit")
+
+
 # df_main_crit_q1$leg <- ifelse(df_main_crit_q1$isLeg == "leg",0,1)
 # # leg = 0 , ill = 1
 # 
