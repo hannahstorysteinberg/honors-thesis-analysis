@@ -14,49 +14,34 @@ library(stringr)
 library(lme4)
 library(lmerTest) # stack overflow said this would show p values
 library(ggplot2)
-res <- read_csv(file = "results.csv",col_names = FALSE) # kendra black and second philip naef was removed prior to this csv
+res <- read_csv(file = "results_prod 14 ppl.csv",col_names = FALSE) # need to download from google sheets
+
 df <- res
 head(df)
 colnames(df) <- LETTERS[1:24] # like the google sheet
-head(df)
-list_of_names <- as.vector(df[which(df[,"J"] == "name"),"K"])[[1]]
-list_of_names
-length(list_of_names)
-length(unique(list_of_names)) # 1 unique name
-list_of_names[duplicated(list_of_names)]
-# philip naef is dup, but it seems to be fine bc he got a different order of words/sentences
-
-
 df <- filter(df, !grepl("^#",A)) # remove all rows that start with a hashtag which are all the comments
 head(df)
-df <- select(df,-c(B,C,D,E,G)) # remove unnessesary columns
+colnames(df) <- c("subj", "IP", "controller", "order", "element", "label", "latin", "penntype", "pennname","parameter","value","eventTime","prolificID","num", "item", "group", "isCrit", "isLeg", "sentNum", "text", "author", "fileName", "comments")
 
-# assign each result time number to the name as an id
-times <- unique(df[,"A"])[[1]]
-length(times)
-length(list_of_names)
-key <- setNames(list_of_names,times)
+df <- select(df, -c("IP","controller","order", "element", "latin","penntype","eventTime", "prolificID", "comments"))
 
-df$A <- str_replace_all(df$A, key)
-df <- filter(df,!(F == "instructions" | F == "secondpage")) # they all consented and have native english so can remove that part
-df <- select(df,-X)
-colnames(df) <- c("Name","Phase","TypeOption","Question","TypeChoice","Data","Timing","Num","Item","Group","isCrit","isLeg","isSent","isMain","sentNum","text","author","fileName")
-head(df)
+filter(df, value == "unchecked") # what to do w people who don't check native english speaker???
+
+
+df <- filter(df, label != "instructions" & pennname == "q1" | pennname == "demographics")
+df$subj <- as.factor(df$subj)
+
+# exclusion critera
+
+
+
 
 # SPLIT INTO DEMOGRAPHICS AND MAIN STUDY
-df_main <- filter(df,Phase == "main")
-df_demo <- filter(df,Phase == "demographics")
-df_gender <- filter(df,Phase == "extra")
+df_main <- filter(df,pennname == "q1")
+df_demo <- filter(df,pennname == "demographics")
 
 df_main_crit <- filter(df_main, isCrit == "crit")
-df_main_crit_q1 <- filter(df_main_crit,Question == "q1")
 
-
-# set each person to a id so deidentified
-list_of_names <- unique(df_main_crit_q1$Name)
-key_deidentified <- setNames(as.character(1:length(list_of_names)),list_of_names)
-df_main_crit_q1$Name <- str_replace_all(df_main_crit_q1$Name,key_deidentified)
-df_main_crit_q1$subj <- as.numeric(df_main_crit_q1$Name)
 
 df_main_crit_q1$sent <- as.numeric(gsub("_","",df_main_crit_q1$sentNum)) # remove the first character with is an underscore
 df_main_crit_q1$leg <- ifelse(df_main_crit_q1$isLeg == "leg",0,1)
