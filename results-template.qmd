@@ -57,7 +57,8 @@ df_main_crit$sim <- ifelse(df_main_crit$sent == 1 | df_main_crit$sent == 2 | df_
 # 
 
 #now calculate literal/nonliteral (changed)
-
+# literal = 0, non literal = 1
+# variable is isNonLiteral (changed)
 
 
 # * IF the sentence is re-typed correctly (e.g., the typed string with no spaces and punctuation matches the original sentences with not spaces and punctuation), 
