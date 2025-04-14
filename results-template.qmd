@@ -59,11 +59,22 @@ df_main_crit$sim <- ifelse(df_main_crit$sent == 1 | df_main_crit$sent == 2 | df_
 #now calculate literal/nonliteral (changed)
 
 
+
+# * IF the sentence is re-typed correctly (e.g., the typed string with no spaces and punctuation matches the original sentences with not spaces and punctuation), 
+# then count it as literal
+# 
+# * Else, IF the typed sentence matches the “plausible” version of the sentence, count it as non-literal
+# 
+# * Else, IF neither the critical implausible word nor the critical plausible word are found as a substring of the typed string, discard the trial
+# 
+# * Else, print the trial for inspection and pause for user input - these are cases where either the plausible or implausible words are typed, but something else was typed incorrectly. I think it would be the best to look at those one by one to decide how to code them. Some of them might just have typos that we can ignore and count as correct (e.g, we have a participant who types the name “Tony” and “Tonyt”); others might be cases where the participants truly mis-read/mis-interpreted another word in the sentence, in which case we should probably discard the trial. So, each of these sentences would be printed out by your code, and then you can choose one of three responses - e.g., 1 (count as literal), 2 (count as non-literal), or 3 (discard trial).
+
+
 # df_main_crit_q1_sent$changed <- ifelse(df_main_crit_q1_sent$Data == df_main_crit_q1_sent$text,0,1)
 # # LOOK BACK AT THIS
 # # remove all where something other than plaus or implaus?
 # 
-# final_df <- df_main_crit_q1_sent
+# final_df <- df_main_crit
 # 
 # # GLMER
 # # need to generate coeficients from the model without an interaction in gibson study
