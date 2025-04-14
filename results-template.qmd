@@ -43,110 +43,132 @@ df_demo <- filter(df,pennname == "demographics")
 df_main_crit <- filter(df_main, isCrit == "crit")
 
 
-df_main_crit_q1$sent <- as.numeric(gsub("_","",df_main_crit_q1$sentNum)) # remove the first character with is an underscore
-df_main_crit_q1$leg <- ifelse(df_main_crit_q1$isLeg == "leg",0,1)
-# leg = 0 , ill = 1
-
-df_main_crit_q1_sent <- filter(df_main_crit_q1, isSent == "sent")
-
-df_main_crit_q1_sent <- select(df_main_crit_q1_sent, c("subj", "Data", "leg", "sent", "text", "author", "fileName"))
-
-df_main_crit_q1_sent$sim <- ifelse(df_main_crit_q1_sent$sent == 1 | df_main_crit_q1_sent$sent == 2 | df_main_crit_q1_sent$sent == 5 | df_main_crit_q1_sent$sent == 6 | df_main_crit_q1_sent$sent == 9 | df_main_crit_q1_sent$sent == 12 | df_main_crit_q1_sent$sent == 16 | df_main_crit_q1_sent$sent == 17 | df_main_crit_q1_sent$sent == 18 | df_main_crit_q1_sent$sent == 20, 0,1)
-# sim = 0, dis = 1
-
-# need similarity and y
-df_main_crit_q1_sent$changed <- ifelse(df_main_crit_q1_sent$Data == df_main_crit_q1_sent$text,0,1)
-# LOOK BACK AT THIS
-# remove all where something other than plaus or implaus?
-
-final_df <- df_main_crit_q1_sent
-
-# GLMER
-# need to generate coeficients from the model without an interaction in gibson study
-model <- glmer(changed ~ 1 + leg + sim +# because generated with interaction, can still run a model without an interaction
-                 + (1 | subj) 
-                 + (0 + sim | subj)
-                 + (0 + leg | subj)
-                 + (1 | sent),data = final_df,family="binomial")
-update(model, control = glmerControl(calc.derivs = FALSE))
-summary(model)
-# first fixed effects, then the effects of the variables on y varying across the subj/sent
-
-# Interaction Model
-# effect of legibility when sim is 0, but not coded as 0 so cannot interpret these coef
-model_interaction <- glmer(changed ~ 1 + leg * sim + 
-                 + (1 | subj) 
-               + (0 + sim | subj)
-               + (0 + leg | subj)
-               + (1 | sent),data = final_df,family="binomial")
-update(model_interaction, control = glmerControl(calc.derivs = FALSE))
-summary(model_interaction)
-
-
-
-#Interaction model with Sim = 0
-# for the simple effects, the effect when similar is coded as 0
-# when the letter is similar, people are more likely to change illegible sentences than legible sentences (because the estimate is positive)
-
-model_interaction_sim_dummy_sim <- glmer(changed ~ 1 + leg * sim_dummy_sim  
-                           + (1 | subj) 
-                           + (0 + sim_dummy_sim | subj)
-                           + (0 + leg | subj)
-                           + (1 | sent),data = final_df,family="binomial")
-update(model_interaction_sim_dummy_sim, control = glmerControl(calc.derivs = FALSE))
-summary(model_interaction_sim_dummy_sim)
-
-
-# Interaction model with Sim = 1
-# for the simple effects, the effect when similar is coded as 1, and dissimilar is coded as 0
-# when the letter is similar, people are more likely to change illegible sentences than legible sentences (because the estimate is positive)
-# the difference between the simple effects is not significant (interaction is not significant)
-model_interaction_sim_dummy_dis <- glmer(y ~ 1 + leg * sim_dummy_dis + 
-                             + (1 | subj) 
-                           + (0 + sim_dummy_dis | subj)
-                           + (0 + leg | subj)
-                           + (1 | sent),data = df,family="binomial")
-update(model_interaction_sim_dummy_dis, control = glmerControl(calc.derivs = FALSE))
-summary(model_interaction_sim_dummy_dis)
-
-
-
-# summary
-summglm <- summary(model)
-summglm
-summglm$vcov
-summglm$coefficients
-
-
-# estimates
-beta0_est <- unname(fixef(model)[1])
-beta1_est <- unname(fixef(model)[2])
-beta2_est <- unname(fixef(model)[3])
-
-varcorr_est <- VarCorr(model)
-
-
-t00_est <- varcorr_est$subj[1] # variance of random intercept of subject
-#t01_est <- varcorr_est_subj[1,2] # covariance between intercept and slope
-t11_est <- varcorr_est$subj.1[1] # variance of random slope of legibility by subject
-t22_est <- varcorr_est$subj.2[1] # variance of random slope of similarity by participant
-
-
-xi00_est <- varcorr_est$sent[1] # variance of sentence intercepts?
-
-
-# Difference of "population" parameters vs estimated parameters
-# dif <- cbind(beta0-beta0_est,beta1-beta1_est,beta2-beta2_est,
-#              t00-t00_est,t11-t11_est,t22-t22_est,
-#              xi00-xi00_est)
-# colnames(dif) <- c("beta0","beta1","beta2","t00","t11","t22","xi")
-# dif
+# df_main_crit_q1$sent <- as.numeric(gsub("_","",df_main_crit_q1$sentNum)) # remove the first character with is an underscore
+# df_main_crit_q1$leg <- ifelse(df_main_crit_q1$isLeg == "leg",0,1)
+# # leg = 0 , ill = 1
+# 
+# df_main_crit_q1_sent <- filter(df_main_crit_q1, isSent == "sent")
+# 
+# df_main_crit_q1_sent <- select(df_main_crit_q1_sent, c("subj", "Data", "leg", "sent", "text", "author", "fileName"))
+# 
+# df_main_crit_q1_sent$sim <- ifelse(df_main_crit_q1_sent$sent == 1 | df_main_crit_q1_sent$sent == 2 | df_main_crit_q1_sent$sent == 5 | df_main_crit_q1_sent$sent == 6 | df_main_crit_q1_sent$sent == 9 | df_main_crit_q1_sent$sent == 12 | df_main_crit_q1_sent$sent == 16 | df_main_crit_q1_sent$sent == 17 | df_main_crit_q1_sent$sent == 18 | df_main_crit_q1_sent$sent == 20, 0,1)
+# # sim = 0, dis = 1
+# 
+# # need similarity and y
+# df_main_crit_q1_sent$changed <- ifelse(df_main_crit_q1_sent$Data == df_main_crit_q1_sent$text,0,1)
+# # LOOK BACK AT THIS
+# # remove all where something other than plaus or implaus?
+# 
+# final_df <- df_main_crit_q1_sent
+# 
+# # GLMER
+# # need to generate coeficients from the model without an interaction in gibson study
+# model <- glmer(changed ~ 1 + leg + sim +# because generated with interaction, can still run a model without an interaction
+#                  + (1 | subj) 
+#                  + (0 + sim | subj)
+#                  + (0 + leg | subj)
+#                  + (1 | sent),data = final_df,family="binomial")
+# update(model, control = glmerControl(calc.derivs = FALSE))
+# summary(model)
+# # first fixed effects, then the effects of the variables on y varying across the subj/sent
+# 
+# # Interaction Model
+# # effect of legibility when sim is 0, but not coded as 0 so cannot interpret these coef
+# model_interaction <- glmer(changed ~ 1 + leg * sim + 
+#                  + (1 | subj) 
+#                + (0 + sim | subj)
+#                + (0 + leg | subj)
+#                + (1 | sent),data = final_df,family="binomial")
+# update(model_interaction, control = glmerControl(calc.derivs = FALSE))
+# summary(model_interaction)
+# 
+# 
+# 
+# #Interaction model with Sim = 0
+# # for the simple effects, the effect when similar is coded as 0
+# # when the letter is similar, people are more likely to change illegible sentences than legible sentences (because the estimate is positive)
+# 
+# model_interaction_sim_dummy_sim <- glmer(changed ~ 1 + leg * sim_dummy_sim  
+#                            + (1 | subj) 
+#                            + (0 + sim_dummy_sim | subj)
+#                            + (0 + leg | subj)
+#                            + (1 | sent),data = final_df,family="binomial")
+# update(model_interaction_sim_dummy_sim, control = glmerControl(calc.derivs = FALSE))
+# summary(model_interaction_sim_dummy_sim)
+# 
+# 
+# # Interaction model with Sim = 1
+# # for the simple effects, the effect when similar is coded as 1, and dissimilar is coded as 0
+# # when the letter is similar, people are more likely to change illegible sentences than legible sentences (because the estimate is positive)
+# # the difference between the simple effects is not significant (interaction is not significant)
+# model_interaction_sim_dummy_dis <- glmer(y ~ 1 + leg * sim_dummy_dis + 
+#                              + (1 | subj) 
+#                            + (0 + sim_dummy_dis | subj)
+#                            + (0 + leg | subj)
+#                            + (1 | sent),data = df,family="binomial")
+# update(model_interaction_sim_dummy_dis, control = glmerControl(calc.derivs = FALSE))
+# summary(model_interaction_sim_dummy_dis)
+# 
+# 
+# 
+# # summary
+# summglm <- summary(model)
+# summglm
+# summglm$vcov
+# summglm$coefficients
+# 
+# 
+# # estimates
+# beta0_est <- unname(fixef(model)[1])
+# beta1_est <- unname(fixef(model)[2])
+# beta2_est <- unname(fixef(model)[3])
+# 
+# varcorr_est <- VarCorr(model)
+# 
+# 
+# t00_est <- varcorr_est$subj[1] # variance of random intercept of subject
+# #t01_est <- varcorr_est_subj[1,2] # covariance between intercept and slope
+# t11_est <- varcorr_est$subj.1[1] # variance of random slope of legibility by subject
+# t22_est <- varcorr_est$subj.2[1] # variance of random slope of similarity by participant
+# 
+# 
+# xi00_est <- varcorr_est$sent[1] # variance of sentence intercepts?
+# 
+# 
+# # Difference of "population" parameters vs estimated parameters
+# # dif <- cbind(beta0-beta0_est,beta1-beta1_est,beta2-beta2_est,
+# #              t00-t00_est,t11-t11_est,t22-t22_est,
+# #              xi00-xi00_est)
+# # colnames(dif) <- c("beta0","beta1","beta2","t00","t11","t22","xi")
+# # dif
 ```
 
 ## Results
 
 ### Hypothesis 1: effect of legibility
 
-When participants read illegible sentences, they were `r ifelse(sign(beta1_est) == 1,"more","less")` likely to change the sentence (b, se) \### Hypothesis 2: effect of similarity
+When participants read illegible sentences, they were r ifelse(sign(beta1_est) == 1,"more","less") likely to change the sentence (b, se) 
+
+### Hypothesis 2: effect of similarity
 
 ### Hypothesis 3: interaction
+
+
+
+
+
+### demographics
+
+```{r}
+#| echo: false
+#| output: false
+
+num_participants <- length(unique(df_demo$subj))
+mean_age <- mean(as.numeric(filter(df_demo, parameter == "age")$value))
+sd_age <- sd(as.numeric(filter(df_demo, parameter == "age")$value))
+num_female <- sum(filter(df_demo, parameter == "gender")$value == "female")
+num_male <- sum(filter(df_demo, parameter == "gender")$value == "male")
+
+```
+
+The mean age of the `r num_participants` participants is `r mean_age` the standard deviation is `r sd_age`. There are `r num_female` females and `r num_male` males.
