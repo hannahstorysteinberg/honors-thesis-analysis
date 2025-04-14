@@ -43,23 +43,22 @@ df_main <- filter(df,pennname == "q1")
 df_demo <- filter(df,pennname == "demographics")
 
 
-df_main$sent <- as.numeric(gsub("_","",df_main_crit_q1$sentNum))
+df_main$sent <- as.numeric(gsub("_","",df_main$sentNum))
 
 
-# df_main_crit <- filter(df_main, isCrit == "crit")
+df_main_crit <- filter(df_main, isCrit == "crit")
 
 
-# df_main_crit_q1$leg <- ifelse(df_main_crit_q1$isLeg == "leg",0,1)
+df_main_crit$leg <- ifelse(df_main_crit$isLeg == "leg",0,1)
 # # leg = 0 , ill = 1
-# 
-# df_main_crit_q1_sent <- filter(df_main_crit_q1, isSent == "sent")
-# 
-# df_main_crit_q1_sent <- select(df_main_crit_q1_sent, c("subj", "Data", "leg", "sent", "text", "author", "fileName"))
-# 
-# df_main_crit_q1_sent$sim <- ifelse(df_main_crit_q1_sent$sent == 1 | df_main_crit_q1_sent$sent == 2 | df_main_crit_q1_sent$sent == 5 | df_main_crit_q1_sent$sent == 6 | df_main_crit_q1_sent$sent == 9 | df_main_crit_q1_sent$sent == 12 | df_main_crit_q1_sent$sent == 16 | df_main_crit_q1_sent$sent == 17 | df_main_crit_q1_sent$sent == 18 | df_main_crit_q1_sent$sent == 20, 0,1)
+
+df_main_crit$sim <- ifelse(df_main_crit$sent == 1 | df_main_crit$sent == 2 | df_main_crit$sent == 5 | df_main_crit$sent == 6 | df_main_crit$sent == 9 | df_main_crit$sent == 12 | df_main_crit$sent == 16 | df_main_crit$sent == 17 | df_main_crit$sent == 18 | df_main_crit$sent == 20, 0,1)
 # # sim = 0, dis = 1
 # 
-# # need similarity and y
+
+#now calculate literal/nonliteral (changed)
+
+
 # df_main_crit_q1_sent$changed <- ifelse(df_main_crit_q1_sent$Data == df_main_crit_q1_sent$text,0,1)
 # # LOOK BACK AT THIS
 # # remove all where something other than plaus or implaus?
