@@ -14,7 +14,7 @@ library(stringr)
 library(lme4)
 library(lmerTest) # stack overflow said this would show p values
 library(ggplot2)
-res <- read_csv(file = "results_prod 102.csv",col_names = FALSE) # need to download from google sheets
+res <- read_csv(file = "results_prod 115.csv",col_names = FALSE) # need to download from google sheets
 
 df <- res
 head(df)
@@ -65,7 +65,7 @@ df_main$text <- gsub("’","",df_main$text) # remove weird apostrophes because t
 df_main$text <- gsub("'","",df_main$text) # remove apostrophes because they mess everything up
 df_main$text <- tolower(df_main$text) # make all same case
 df_main$text <- gsub(" ","",df_main$text) # remove all spaces
-
+df_main$text <- gsub("richardii", "richard", df_main$text) # remove richard II that I keep forgetting to remove
 
 df_main$sent <- as.numeric(gsub("_","",df_main$sentNum))
 
@@ -96,7 +96,7 @@ for (i in 1:length(crit_words_implaus)) {
 
 
 
-for (i in 1:nrow(changed_df[1:20,])) {
+for (i in 1:nrow(changed_df)) {
   cur_value <- changed_df$value[i]
   cur_text <- changed_df$text[i]
   cur_sent <- changed_df$sent[i]
@@ -105,31 +105,37 @@ for (i in 1:nrow(changed_df[1:20,])) {
   cur_plaus_sent <- plaus_version[cur_sent]
   if (cur_value == cur_text) { # the sentence is re-typed correctly (e.g., the typed string with no spaces and punctuation matches the original sentences with not spaces and punctuation), then count it as literal
 
-    changed_df$isNonLiteral <- 0 # literal
+    changed_df$isNonLiteral[i] <- 0 # literal
   }
   else if (cur_value == "jamilahalfedanonionbecauseusingafullonewasunnecessary") { # special case where halfed is ok
-    changed_df$isNonLiteral <- 1 # nonliteral
+    changed_df$isNonLiteral[i] <- 1 # nonliteral
   }
   else if (cur_value == cur_plaus_sent) { # the typed sentence matches the “plausible” version of the sentence, count it as non-literal
-    changed_df$isNonLiteral <- 1 # nonliteral
+    changed_df$isNonLiteral[i] <- 1 # nonliteral
     
   } else if (!(str_detect(cur_value,cur_implaus_word) | str_detect(cur_value,cur_plaus_word))) { # neither the critical implausible word nor the critical plausible word are found as a substring of the typed string, discard the trial
 
     rows_to_discard <- c(rows_to_discard, i)
   } else {
     holder <- menu(c("literal (implausible)","nonliteral (plausible)", "discard trial"),title = paste("evaluate this sentence: ", cur_value, ". The real implausible sentence is: ", cur_text, ", where the implausible word is ", cur_implaus_word, ", and the plausible word is ", cur_plaus_word, ".", collapse = "", sep = ""))
+    
+    # need to somehow highlight the difference 
+    
+    
     if (holder == 3) {
       rows_to_discard <- c(rows_to_discard, i)
     } else {
-      changed_df$isNonLiteral <- holder - 1
+      changed_df$isNonLiteral[i] <- holder - 1
       # if it is nonliteral, will answer 2 and - 1 is 1, 
       # if answer literal, will answer 1 and -1 is 0
     }
   }
-  print(changed_df$isNonLiteral[i])
-  print(cur_value)
-  print(cur_text)
+  # print(changed_df$isNonLiteral[i])
+  # print(cur_value)
+  # print(cur_text)
 }
+
+rows_to_discard[-1] # which ones to remove
 
 
 #now calculate literal/nonliteral (changed)
