@@ -40,7 +40,7 @@ df$subj <- as.factor(df$subj)
 
 
 # exclusion critera
-str_detect(paste(df_main$isCrit,collapse=""),"critcrit") # if anyone got 2 criticals in a row
+str_detect(paste(df$isCrit,collapse=""),"critcrit") # if anyone got 2 criticals in a row
 
 
 
@@ -73,11 +73,15 @@ df_main$sent <- as.numeric(gsub("_","",df_main$sentNum))
 df_main_crit <- filter(df_main, isCrit == "crit")
 
 
-df_main_crit$leg <- ifelse(df_main_crit$isLeg == "leg",0,1)
-# # leg = 0 , ill = 1
+# 0.5 = illegible, -0.5 = legible
+# dissimilar = -0.5, similar = 0.5
 
-df_main_crit$sim <- ifelse(df_main_crit$sent == 1 | df_main_crit$sent == 2 | df_main_crit$sent == 5 | df_main_crit$sent == 6 | df_main_crit$sent == 9 | df_main_crit$sent == 12 | df_main_crit$sent == 16 | df_main_crit$sent == 17 | df_main_crit$sent == 18 | df_main_crit$sent == 20, 0,1)
-# # sim = 0, dis = 1
+
+df_main_crit$leg <- ifelse(df_main_crit$isLeg == "leg",0.5,-0.5)
+# # leg = 0.5 , ill = -0.5
+
+df_main_crit$sim <- ifelse(df_main_crit$sent == 1 | df_main_crit$sent == 2 | df_main_crit$sent == 5 | df_main_crit$sent == 6 | df_main_crit$sent == 9 | df_main_crit$sent == 12 | df_main_crit$sent == 16 | df_main_crit$sent == 17 | df_main_crit$sent == 18 | df_main_crit$sent == 20, 0.5,-0.5)
+# # sim = 0.5, dis = -0.5
 # 
 
 changed_df <- select(df_main_crit, c("subj","sent","value", "text", "leg", "sim"))
@@ -155,30 +159,146 @@ summary(model)
 # Hypothesis 1 numbers
 beta1_est <- unname(fixef(model)[2])
 sign_b1 <- sign(beta1_est)
+sign_b1_interp <- ifelse(sign_b1 > 0, "more", "less")
+
 p_val_b1 <- summary(model)$coefficients[2,4]
 p_val_b1_sig <- p_val_b1 < 0.05
+p_val_b1_sig_interp <- ifelse(p_val_b1_sig, "was", "was not")
 se_b1 <- summary(model)$coefficients[2,2]
 z_b1 <- summary(model)$coefficients[2,3]
 
+varcorr_est <- VarCorr(model)
+t11_est <- varcorr_est$subj.2[1] # subj.2 is leg?
+
 
 beta2_est <- unname(fixef(model)[3])
+sign_b2 <- sign(beta2_est)
+sign_b2_interp <- ifelse(sign_b2 > 0, "more", "less")
 
-# for independent project, can we go over the coding again
+p_val_b2 <- summary(model)$coefficients[3,4]
+p_val_b2_sig <- p_val_b2 < 0.05
+p_val_b2_sig_interp <- ifelse(p_val_b2_sig, "was", "was not")
+se_b2 <- summary(model)$coefficients[3,2]
+z_b2 <- summary(model)$coefficients[3,3]
+
+t22_est <- varcorr_est$subj.1[1] # subj.1 is sim?
+
+# for independent project, can we go over the coding again, similarity is weird
 
 ```
 
 ## Results
 
+
 ### Hypothesis 1: effect of legibility
 
-When participants read illegible sentences, they were r ifelse(sign(beta1_est) == 1,"more","less") likely to change the sentence (b, se) 
+When participants read illegible sentences, they were `r sign_b1_interp` likely to change the sentence (b = `r beta1_est`,se = `r se_b1`), and this effect `r p_val_b1_sig_interp` statistically significant (z = `r z_b1`, p = `r p_val_b1`). This effect was allowed to vary across participants ($\tau_{11}$ = `r t11_est`) 
 
 ### Hypothesis 2: effect of similarity
 
+When participants read similar sentences, they were `r sign_b2_interp` likely to change the sentence (b = `r beta2_est`,se = `r se_b2`), and this effect `r p_val_b2_sig_interp` statistically significant (z = `r z_b2`, p = `r p_val_b2`). This effect was allowed to vary across participants ($\tau_{22}$ = `r t22_est`) 
+
+
+
 ### Hypothesis 3: interaction
 
+```{r}
+#| echo: false
+#| output: false
+
+final_df$sim_dummy_sim <- ifelse(final_df$sim == -0.5, 0, 1)
+final_df$sim_dummy_dis <- ifelse(final_df$sim == 0.5, 0, 1)
+
+# #Interaction model with Sim = 0
+# # for the simple effects, the effect when similar is coded as 0
+# # when the letter is similar, people are more likely to change illegible sentences than legible sentences (because the estimate is positive)
+# 
+model_interaction_sim_dummy_sim <- glmer(isNonLiteral ~ 1 + leg * sim_dummy_sim
+                           + (1 | subj)
+                           + (0 + sim_dummy_sim | subj)
+                           + (0 + leg | subj)
+                           + (1 | sent),data = final_df,family="binomial")
+update(model_interaction_sim_dummy_sim, control = glmerControl(calc.derivs = FALSE))
+summary(model_interaction_sim_dummy_sim)
 
 
+betasim_est <- unname(fixef(model_interaction_sim_dummy_sim)[2])
+sign_bsim <- sign(betasim_est)
+sign_bsim_interp <- ifelse(sign_bsim > 0, "more", "less")
+
+p_val_bsim <- summary(model_interaction_sim_dummy_sim)$coefficients[2,4]
+p_val_bsim_sig <- p_val_bsim < 0.05
+p_val_bsim_sig_interp <- ifelse(p_val_bsim_sig, "was", "was not")
+se_bsim <- summary(model_interaction_sim_dummy_sim)$coefficients[2,2]
+z_bsim <- summary(model_interaction_sim_dummy_sim)$coefficients[2,3]
+
+# 
+# 
+# # Interaction model with Sim = 1
+# # for the simple effects, the effect when similar is coded as 1, and dissimilar is coded as 0
+# # when the letter is similar, people are more likely to change illegible sentences than legible sentences (because the estimate is positive)
+# # the difference between the simple effects is not significant (interaction is not significant)
+model_interaction_sim_dummy_dis <- glmer(isNonLiteral ~ 1 + leg * sim_dummy_dis +
+                             + (1 | subj)
+                           + (0 + sim_dummy_dis | subj)
+                           + (0 + leg | subj)
+                           + (1 | sent),data = final_df,family="binomial")
+update(model_interaction_sim_dummy_dis, control = glmerControl(calc.derivs = FALSE))
+summary(model_interaction_sim_dummy_dis)
+
+betadis_est <- unname(fixef(model_interaction_sim_dummy_dis)[2])
+sign_bdis <- sign(betadis_est)
+sign_bdis_interp <- ifelse(sign_bdis > 0, "more", "less")
+
+p_val_bdis <- summary(model_interaction_sim_dummy_sim)$coefficients[2,4]
+p_val_bdis_sig <- p_val_bdis < 0.05
+p_val_bdis_sig_interp <- ifelse(p_val_bdis_sig, "was", "was not")
+se_bdis <- summary(model_interaction_sim_dummy_sim)$coefficients[2,2]
+z_bdis <- summary(model_interaction_sim_dummy_sim)$coefficients[2,3]
+
+
+```
+
+When the letter is similar, people are `r sign_bsim_interp` likely to change an illegible sentence compared to a legible sentence (b = `r betasim_est`,se = `r se_bsim`), and this effect `r p_val_bsim_sig_interp` statistically significant (z = `r z_bsim`, p = `r p_val_bsim`).
+
+When the letter is dissimilar, people are `r sign_bdis_interp` likely to change an illegible sentence compared to a legible sentence (b = `r betadis_est`,se = `r se_bdis`), and this effect `r p_val_bdis_sig_interp` statistically significant (z = `r z_bdis`, p = `r p_val_bdis`).
+
+The effect of legibility was , when the letters were similar, compared to dissimilar 
+
+### Visualizations
+
+```{r}
+#| echo: false
+# % change for legibility and illegibility split by sim/disim
+
+summary_df <- final_df %>%
+  group_by(leg, sim) %>%
+  summarise(
+    proportion_nonliteral = mean(isNonLiteral),
+    .groups = "drop"
+  )
+plot_df <- summary_df %>%
+  mutate(
+    legibility = factor(leg, levels = c(1, 0), labels = c("Legible", "Illegible")),
+    condition  = factor(sim, levels = c(1, 0), labels = c("Similar", "Dissimilar"))
+  )
+ggplot(plot_df, aes(x = legibility, y = proportion_nonliteral, fill = condition)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
+  labs(
+    title = "Proportion of Non-Literal Changes by Legibility and Condition",
+    x = "Legibility",
+    y = "Proportion Non-Literal",
+    fill = "Condition"
+  ) +
+  geom_text(
+    aes(label = round(proportion_nonliteral, 2)),
+    position = position_dodge(width = 0.8),
+    vjust = -0.5,
+    size = 4
+  ) +
+  theme_minimal()
+
+```
 
 
 ### demographics
