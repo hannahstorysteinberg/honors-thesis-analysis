@@ -14,7 +14,7 @@ library(stringr)
 library(lme4)
 library(lmerTest) # stack overflow said this would show p values
 library(ggplot2)
-res <- read_csv(file = "results_prod 14 ppl.csv",col_names = FALSE) # need to download from google sheets
+res <- read_csv(file = "results_prod 102.csv",col_names = FALSE) # need to download from google sheets
 
 df <- res
 head(df)
@@ -22,6 +22,13 @@ colnames(df) <- LETTERS[1:24] # like the google sheet
 df <- filter(df, !grepl("^#",A)) # remove all rows that start with a hashtag which are all the comments
 head(df)
 colnames(df) <- c("subj", "IP", "controller", "order", "element", "label", "latin", "penntype", "pennname","parameter","value","eventTime","prolificID","num", "item", "group", "isCrit", "isLeg", "sentNum", "text", "author", "fileName", "comments")
+
+# filter out idan response and any participants above 50 and the first two responses
+df <- filter(df, subj != "1744586734" & subj != "1744586986" & subj != "1744662429") # removes first two subject ids and idans subject id (subject id is just the time of when participant started the experiment which is unique)
+
+df <- filter(df, !(subj %in% unique(df$subj)[filter(df, parameter == "age")$value > 50])) # filter out participants whose age is above 50
+
+
 
 df <- select(df, -c("IP","controller","order", "element", "latin","penntype","eventTime", "prolificID", "comments"))
 
@@ -43,6 +50,23 @@ df_main <- filter(df,pennname == "q1")
 df_demo <- filter(df,pennname == "demographics")
 
 
+df_main$value <- gsub("%2C","",df_main$value) # replace %2C (commas) with nothing because they are not important
+df_main$value <- gsub("\\.","",df_main$value) # remove periods because they are not important
+df_main$value <- gsub("’","",df_main$value) # remove weird apostrophes because they mess everything up
+df_main$value <- gsub("'","",df_main$value) # remove normal apostrophes because they mess everything up
+df_main$value <- tolower(df_main$value) # make all same case
+df_main$value <- gsub(" ","",df_main$value) # remove all spaces
+
+
+# do the same for text column
+df_main$text <- gsub("%2C","",df_main$text) # replace %2C (commas) with nothing because they are not important
+df_main$text <- gsub("\\.","",df_main$text) # remove periods because they are not important
+df_main$text <- gsub("’","",df_main$text) # remove weird apostrophes because they mess everything up
+df_main$text <- gsub("'","",df_main$text) # remove apostrophes because they mess everything up
+df_main$text <- tolower(df_main$text) # make all same case
+df_main$text <- gsub(" ","",df_main$text) # remove all spaces
+
+
 df_main$sent <- as.numeric(gsub("_","",df_main$sentNum))
 
 
@@ -55,6 +79,38 @@ df_main_crit$leg <- ifelse(df_main_crit$isLeg == "leg",0,1)
 df_main_crit$sim <- ifelse(df_main_crit$sent == 1 | df_main_crit$sent == 2 | df_main_crit$sent == 5 | df_main_crit$sent == 6 | df_main_crit$sent == 9 | df_main_crit$sent == 12 | df_main_crit$sent == 16 | df_main_crit$sent == 17 | df_main_crit$sent == 18 | df_main_crit$sent == 20, 0,1)
 # # sim = 0, dis = 1
 # 
+
+changed_df <- select(df_main_crit, c("subj","sent","value", "text", "leg", "sim"))
+changed_df$isNonLiteral <- NA
+
+rows_to_discard <- NA
+
+crit_words_implaus <- c("banks","smell","gold","desk","map","saved","ball","hit","naps","run","blamed","ties","liver","rain","halted","warm","water","hear","dining","meat")
+crit_words_plaus <- c("barks","swell","mold","disk","mop","sawed","mall","lit","nags","sun","flamed","tics","liner","gain","halved","warn","wafer","near","pining","moat")
+
+
+for (i in 1:nrow(changed_df[1:10,])) {
+  cur_value <- changed_df$value[i]
+  cur_text <- changed_df$text[i]
+  cur_sent <- changed_df$sent[i]
+  cur_implaus_word <- crit_words_implaus[i]
+  cur_plaus_word <- crit_words_plaus[i]
+  if (cur_value == cur_text) { # the sentence is re-typed correctly (e.g., the typed string with no spaces and punctuation matches the original sentences with not spaces and punctuation), 
+then count it as literal
+
+    changed_df$isNonLiteral <- 0 # literal
+  }
+  else if () { # the typed sentence matches the “plausible” version of the sentence, count it as non-literal
+
+    
+  } else if (!(str_detect(cur_value,cur_implaus_word) | str_detect(cur_value,cur_plaus_word))) { # neither the critical implausible word nor the critical plausible word are found as a substring of the typed string, discard the trial
+
+    rows_to_discard <- c(rows_to_discard, i)
+  } else {
+    
+  }
+}
+
 
 #now calculate literal/nonliteral (changed)
 # literal = 0, non literal = 1
