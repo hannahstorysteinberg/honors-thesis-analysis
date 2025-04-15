@@ -2,7 +2,15 @@
 title: "results template"
 format: pdf
 editor: visual
+
 ---
+
+```{r setup, include=FALSE}
+options(digits=2)
+
+```
+
+
 
 ```{r}
 #| echo: false
@@ -101,7 +109,13 @@ for (i in 1:length(crit_words_implaus)) {
 }
 
 
+# coef of leg -2.1305
+# the probability of changing a sentence that is legible is lower than the probability of changing a sentence that is illegible
+# higher legibility code (-0.5 to 0.5) corresponds to lower log odds
+# the log odds... is 2.1305 lower than ...
 
+# the probability of changing a sentence that is similar is greater than the probability of changing a sentence that is dissimilar
+# the log odds... 1.6255 greater ...
 
 for (i in 1:nrow(changed_df)) {
   cur_value <- changed_df$value[i]
@@ -126,7 +140,7 @@ for (i in 1:nrow(changed_df)) {
   } else {
     rows_to_discard <- c(rows_to_discard, i) # just for now discarding ones not sure about, will classify them later
     # #counter <- counter + 1, there are 322 ones to evaluate
-    # holder <- menu(c("literal (implausible)","nonliteral (plausible)", "discard trial"),title = paste("evaluate this sentence: ", cur_value, ". The real implausible sentence is: ", cur_text, ", where the implausible word is ", cur_implaus_word, ", and the plausible word is ", cur_plaus_word, ".", " The difference is ",paste(strsplit(cur_value,"")[[1]][strsplit(cur_value,"")[[1]] != strsplit(cur_text,"")[[1]]], collapse = ""), ".", " The current row number is ", i, " of", nrow(changed_df), ".", collapse = "", sep = ""))
+    # holder <- menu(c("literal (implausible)","nonliteral (plausible)", "discard trial"),title = paste("evaluate this sentence: ", cur_value, ". The real implausible sentence is: ", cur_text, ", where the implausible word is ", cur_implaus_word, ", and the plausible word is ", cur_plaus_word, ".", " The difference is ",paste(strsplit(cur_value,"")[[1]][strsplit(cur_value,"")[[1]] != strsplit(cur_text,"")[[1]]], collapse = ""), ".", " The current row number is ", i, " of ", nrow(changed_df), ".", collapse = "", sep = ""))
     # 
     # # need to somehow highlight the difference
     # 
@@ -150,8 +164,8 @@ final_df <- changed_df[-rows_to_discard[-1],]
 
 model <- glmer(isNonLiteral ~ 1 + leg + sim + # because generated with interaction, can still run a model without an interaction
                  + (1 | subj)
-                 + (0 + sim | subj)
-                 + (0 + leg | subj)
+                 #+ (0 + sim | subj)
+                 #+ (0 + leg | subj)
                  + (1 | sent),data = final_df,family="binomial")
 update(model, control = glmerControl(calc.derivs = FALSE))
 summary(model)
@@ -184,7 +198,10 @@ z_b2 <- summary(model)$coefficients[3,3]
 t22_est <- varcorr_est$subj.1[1] # subj.1 is sim?
 
 # for independent project, can we go over the coding again, similarity is weird
-
+# write custom code for p values so < 0.0001 or to three decimal
+# This effect was allowed to vary across participants ($\tau_{11}$ = `r t11_est`)
+# This effect was allowed to vary across participants ($\tau_{22}$ = `r t22_est`)
+# random slopes are OUT (when get the rest of the ppl, retry the random slopes)
 ```
 
 ## Results
@@ -192,12 +209,11 @@ t22_est <- varcorr_est$subj.1[1] # subj.1 is sim?
 
 ### Hypothesis 1: effect of legibility
 
-When participants read illegible sentences, they were `r sign_b1_interp` likely to change the sentence (b = `r beta1_est`,se = `r se_b1`), and this effect `r p_val_b1_sig_interp` statistically significant (z = `r z_b1`, p = `r p_val_b1`). This effect was allowed to vary across participants ($\tau_{11}$ = `r t11_est`) 
+When participants read legible sentences, they were `r sign_b1_interp` likely to change the sentence compared to illegible sentences (b = `r beta1_est`, se = `r se_b1`), and this effect `r p_val_b1_sig_interp` statistically significant (z = `r z_b1`, p = `r p_val_b1`).  
 
 ### Hypothesis 2: effect of similarity
 
-When participants read similar sentences, they were `r sign_b2_interp` likely to change the sentence (b = `r beta2_est`,se = `r se_b2`), and this effect `r p_val_b2_sig_interp` statistically significant (z = `r z_b2`, p = `r p_val_b2`). This effect was allowed to vary across participants ($\tau_{22}$ = `r t22_est`) 
-
+When participants read similar sentences, they were `r sign_b2_interp` likely to change the sentence compared to dissimilar sentences (b = `r beta2_est`, se = `r se_b2`), and this effect `r p_val_b2_sig_interp` statistically significant (z = `r z_b2`, p = `r p_val_b2`).  
 
 
 ### Hypothesis 3: interaction
@@ -209,14 +225,16 @@ When participants read similar sentences, they were `r sign_b2_interp` likely to
 final_df$sim_dummy_sim <- ifelse(final_df$sim == -0.5, 0, 1)
 final_df$sim_dummy_dis <- ifelse(final_df$sim == 0.5, 0, 1)
 
+# dissimilar = -0.5, similar = 0.5
+
 # #Interaction model with Sim = 0
 # # for the simple effects, the effect when similar is coded as 0
 # # when the letter is similar, people are more likely to change illegible sentences than legible sentences (because the estimate is positive)
 # 
 model_interaction_sim_dummy_sim <- glmer(isNonLiteral ~ 1 + leg * sim_dummy_sim
                            + (1 | subj)
-                           + (0 + sim_dummy_sim | subj)
-                           + (0 + leg | subj)
+                           #+ (0 + sim_dummy_sim | subj)
+                           #+ (0 + leg | subj)
                            + (1 | sent),data = final_df,family="binomial")
 update(model_interaction_sim_dummy_sim, control = glmerControl(calc.derivs = FALSE))
 summary(model_interaction_sim_dummy_sim)
@@ -239,9 +257,9 @@ z_bsim <- summary(model_interaction_sim_dummy_sim)$coefficients[2,3]
 # # when the letter is similar, people are more likely to change illegible sentences than legible sentences (because the estimate is positive)
 # # the difference between the simple effects is not significant (interaction is not significant)
 model_interaction_sim_dummy_dis <- glmer(isNonLiteral ~ 1 + leg * sim_dummy_dis +
-                             + (1 | subj)
-                           + (0 + sim_dummy_dis | subj)
-                           + (0 + leg | subj)
+                           + (1 | subj)
+                           #+ (0 + sim_dummy_dis | subj)
+                           #+ (0 + leg | subj)
                            + (1 | sent),data = final_df,family="binomial")
 update(model_interaction_sim_dummy_dis, control = glmerControl(calc.derivs = FALSE))
 summary(model_interaction_sim_dummy_dis)
@@ -256,14 +274,43 @@ p_val_bdis_sig_interp <- ifelse(p_val_bdis_sig, "was", "was not")
 se_bdis <- summary(model_interaction_sim_dummy_sim)$coefficients[2,2]
 z_bdis <- summary(model_interaction_sim_dummy_sim)$coefficients[2,3]
 
+#strength <- ifelse(betasim_est - betadis_est) #?
+# what is b3 here
+
+strength_interpretation <- ifelse(sign(betasim_est) == sign(betadis_est),ifelse(abs(betasim_est) > abs(betadis_est), "was stronger","was weaker"),"swapped signs")
+
+betainteractiondis_est <- unname(fixef(model_interaction_sim_dummy_dis)[4])
+se_binteractiondis <- summary(model_interaction_sim_dummy_sim)$coefficients[4,2]
+z_binteractiondis <- summary(model_interaction_sim_dummy_sim)$coefficients[4,3]
+p_val_binteractiondis <- summary(model_interaction_sim_dummy_sim)$coefficients[4,4]
+p_val_binteractiondis_sig <- p_val_binteractiondis < 0.05
+p_val_binteractiondis_sig_interp <- ifelse(p_val_binteractiondis_sig, "was", "was not")
+
+
+# get probability of changing an illegible sentence in similar condition vs legibile sentence and embed that in the sentence 
+# intercept of sim dummy dis is when illegible and dissimilar, so can transform it into a probability 
+# use ilogit to get the probability (undo log odds)
+
+
+# need to make legible dummy coded and illegible dummy coded, and then estimate the 4 models for all the options
+# pick legibilty variable that is coded 
+
+# leg dummy ill, legible as 0 illegible as 1 (same direction as the current leg is), so the other results the same but the intercept is different and thats how to get the probability
+
+# likely to change a legibile sentence (XX%)... 
+# estimated proportion of people who change (get that from the intercept)
+
+# from the 4 models get the intercepts to get the corresponding probabilities 
+# once get these probability, use them to make a plot
+# include CI (or standard error bars) around the bars (some uncertainty estimate)
 
 ```
 
-When the letter is similar, people are `r sign_bsim_interp` likely to change an illegible sentence compared to a legible sentence (b = `r betasim_est`,se = `r se_bsim`), and this effect `r p_val_bsim_sig_interp` statistically significant (z = `r z_bsim`, p = `r p_val_bsim`).
+When the letter is similar, people are `r sign_bsim_interp` likely to change a legible sentence compared to an illegible sentence (b = `r betasim_est`, se = `r se_bsim`), and this effect `r p_val_bsim_sig_interp` statistically significant (z = `r z_bsim`, p = `r p_val_bsim`).
 
-When the letter is dissimilar, people are `r sign_bdis_interp` likely to change an illegible sentence compared to a legible sentence (b = `r betadis_est`,se = `r se_bdis`), and this effect `r p_val_bdis_sig_interp` statistically significant (z = `r z_bdis`, p = `r p_val_bdis`).
+When the letter is dissimilar, people are `r sign_bdis_interp` likely to change an legible sentence compared to an illegible sentence (b = `r betadis_est`, se = `r se_bdis`), and this effect `r p_val_bdis_sig_interp` statistically significant (z = `r z_bdis`, p = `r p_val_bdis`).
 
-The effect of legibility was , when the letters were similar, compared to dissimilar 
+The effect of legibility `r strength_interpretation`, when the letters were similar, compared to dissimilar (b = `r betainteractiondis_est`, se = `r se_binteractiondis`). This effect `r p_val_binteractiondis_sig_interp` statistically significant (z = `r z_binteractiondis`, p = `r p_val_binteractiondis`).
 
 ### Visualizations
 
@@ -277,10 +324,14 @@ summary_df <- final_df %>%
     proportion_nonliteral = mean(isNonLiteral),
     .groups = "drop"
   )
+# 0.5 = illegible, -0.5 = legible
+# dissimilar = -0.5, similar = 0.5
+
+
 plot_df <- summary_df %>%
   mutate(
-    legibility = factor(leg, levels = c(1, 0), labels = c("Legible", "Illegible")),
-    condition  = factor(sim, levels = c(1, 0), labels = c("Similar", "Dissimilar"))
+    legibility = factor(leg, levels = c(-0.5, 0.5), labels = c("Legible", "Illegible")),
+    condition  = factor(sim, levels = c(-0.5,0.5), labels = c("Similar", "Dissimilar"))
   )
 ggplot(plot_df, aes(x = legibility, y = proportion_nonliteral, fill = condition)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
