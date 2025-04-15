@@ -95,8 +95,7 @@ for (i in 1:nrow(changed_df[1:10,])) {
   cur_sent <- changed_df$sent[i]
   cur_implaus_word <- crit_words_implaus[i]
   cur_plaus_word <- crit_words_plaus[i]
-  if (cur_value == cur_text) { # the sentence is re-typed correctly (e.g., the typed string with no spaces and punctuation matches the original sentences with not spaces and punctuation), 
-then count it as literal
+  if (cur_value == cur_text) { # the sentence is re-typed correctly (e.g., the typed string with no spaces and punctuation matches the original sentences with not spaces and punctuation), then count it as literal
 
     changed_df$isNonLiteral <- 0 # literal
   }
