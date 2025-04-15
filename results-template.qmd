@@ -120,18 +120,20 @@ for (i in 1:nrow(changed_df)) {
 
     rows_to_discard <- c(rows_to_discard, i)
   } else {
-    holder <- menu(c("literal (implausible)","nonliteral (plausible)", "discard trial"),title = paste("evaluate this sentence: ", cur_value, ". The real implausible sentence is: ", cur_text, ", where the implausible word is ", cur_implaus_word, ", and the plausible word is ", cur_plaus_word, ".", " The difference is ",paste(strsplit(cur_value,"")[[1]][strsplit(cur_value,"")[[1]] != strsplit(cur_text,"")[[1]]], collapse = ""), ".", " The current row number is ", i, " of", nrow(changed_df), ".", collapse = "", sep = ""))
-    
-    # need to somehow highlight the difference 
-    
-    
-    if (holder == 3) {
-      rows_to_discard <- c(rows_to_discard, i)
-    } else {
-      changed_df$isNonLiteral[i] <- holder - 1
-      # if it is nonliteral, will answer 2 and - 1 is 1, 
-      # if answer literal, will answer 1 and -1 is 0
-    }
+    rows_to_discard <- c(rows_to_discard, i) # just for now discarding ones not sure about, will classify them later
+    # #counter <- counter + 1, there are 322 ones to evaluate
+    # holder <- menu(c("literal (implausible)","nonliteral (plausible)", "discard trial"),title = paste("evaluate this sentence: ", cur_value, ". The real implausible sentence is: ", cur_text, ", where the implausible word is ", cur_implaus_word, ", and the plausible word is ", cur_plaus_word, ".", " The difference is ",paste(strsplit(cur_value,"")[[1]][strsplit(cur_value,"")[[1]] != strsplit(cur_text,"")[[1]]], collapse = ""), ".", " The current row number is ", i, " of", nrow(changed_df), ".", collapse = "", sep = ""))
+    # 
+    # # need to somehow highlight the difference
+    # 
+    # 
+    # if (holder == 3) {
+    #   rows_to_discard <- c(rows_to_discard, i)
+    # } else {
+    #   changed_df$isNonLiteral[i] <- holder - 1
+    #   # if it is nonliteral, will answer 2 and - 1 is 1,
+    #   # if answer literal, will answer 1 and -1 is 0
+    # }
   }
   # print(changed_df$isNonLiteral[i])
   # print(cur_value)
@@ -140,6 +142,68 @@ for (i in 1:nrow(changed_df)) {
 
 rows_to_discard[-1] # which ones to remove
 
+final_df <- changed_df[-rows_to_discard[-1],]
+
+model <- glmer(isNonLiteral ~ 1 + leg + sim + # because generated with interaction, can still run a model without an interaction
+                 + (1 | subj)
+                 + (0 + sim | subj)
+                 + (0 + leg | subj)
+                 + (1 | sent),data = final_df,family="binomial")
+update(model, control = glmerControl(calc.derivs = FALSE))
+summary(model)
+
+# Hypothesis 1 numbers
+beta1_est <- unname(fixef(model)[2])
+sign_b1 <- sign(beta1_est)
+p_val_b1 <- summary(model)$coefficients[2,4]
+p_val_b1_sig <- p_val_b1 < 0.05
+se_b1 <- summary(model)$coefficients[2,2]
+z_b1 <- summary(model)$coefficients[2,3]
+
+
+beta2_est <- unname(fixef(model)[3])
+
+# for independent project, can we go over the coding again
+
+```
+
+## Results
+
+### Hypothesis 1: effect of legibility
+
+When participants read illegible sentences, they were r ifelse(sign(beta1_est) == 1,"more","less") likely to change the sentence (b, se) 
+
+### Hypothesis 2: effect of similarity
+
+### Hypothesis 3: interaction
+
+
+
+
+
+### demographics
+
+```{r}
+#| echo: false
+#| output: false
+
+num_participants <- length(unique(df_demo$subj))
+mean_age <- mean(as.numeric(filter(df_demo, parameter == "age")$value))
+sd_age <- sd(as.numeric(filter(df_demo, parameter == "age")$value))
+num_female <- sum(filter(df_demo, parameter == "gender")$value == "female")
+num_male <- sum(filter(df_demo, parameter == "gender")$value == "male")
+
+```
+
+The mean age of the `r num_participants` participants is `r mean_age` the standard deviation is `r sd_age`. There are `r num_female` females and `r num_male` males.
+
+
+
+
+```{r}
+#| echo: false
+#| output: false
+# comment section
 
 #now calculate literal/nonliteral (changed)
 # literal = 0, non literal = 1
@@ -244,32 +308,3 @@ rows_to_discard[-1] # which ones to remove
 # # dif
 ```
 
-## Results
-
-### Hypothesis 1: effect of legibility
-
-When participants read illegible sentences, they were r ifelse(sign(beta1_est) == 1,"more","less") likely to change the sentence (b, se) 
-
-### Hypothesis 2: effect of similarity
-
-### Hypothesis 3: interaction
-
-
-
-
-
-### demographics
-
-```{r}
-#| echo: false
-#| output: false
-
-num_participants <- length(unique(df_demo$subj))
-mean_age <- mean(as.numeric(filter(df_demo, parameter == "age")$value))
-sd_age <- sd(as.numeric(filter(df_demo, parameter == "age")$value))
-num_female <- sum(filter(df_demo, parameter == "gender")$value == "female")
-num_male <- sum(filter(df_demo, parameter == "gender")$value == "male")
-
-```
-
-The mean age of the `r num_participants` participants is `r mean_age` the standard deviation is `r sd_age`. There are `r num_female` females and `r num_male` males.
