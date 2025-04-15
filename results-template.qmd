@@ -120,7 +120,7 @@ for (i in 1:nrow(changed_df)) {
 
     rows_to_discard <- c(rows_to_discard, i)
   } else {
-    holder <- menu(c("literal (implausible)","nonliteral (plausible)", "discard trial"),title = paste("evaluate this sentence: ", cur_value, ". The real implausible sentence is: ", cur_text, ", where the implausible word is ", cur_implaus_word, ", and the plausible word is ", cur_plaus_word, ".", " The difference is ",paste(strsplit(cur_value,"")[[1]][strsplit(cur_value,"")[[1]] != strsplit(cur_text,"")[[1]]], collapse = ""), ".", collapse = "", sep = ""))
+    holder <- menu(c("literal (implausible)","nonliteral (plausible)", "discard trial"),title = paste("evaluate this sentence: ", cur_value, ". The real implausible sentence is: ", cur_text, ", where the implausible word is ", cur_implaus_word, ", and the plausible word is ", cur_plaus_word, ".", " The difference is ",paste(strsplit(cur_value,"")[[1]][strsplit(cur_value,"")[[1]] != strsplit(cur_text,"")[[1]]], collapse = ""), ".", " The current row number is ", i, " of", nrow(changed_df), ".", collapse = "", sep = ""))
     
     # need to somehow highlight the difference 
     
