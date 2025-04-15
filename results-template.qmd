@@ -99,14 +99,26 @@ rows_to_discard <- NA
 
 crit_words_implaus <- c("banks","smell","gold","desk","map","saved","ball","hit","naps","run","blamed","ties","liver","rain","halted","warm","water","hear","part","meat")
 crit_words_plaus <- c("barks","swell","mold","disk","mop","sawed","mall","lit","nags","sun","flamed","tics","liner","gain","halved","warn","wafer","near","dart","moat")
-re_ordered <- unique(df_main_crit$text)[c(19,10,5,20,11,7,15,6,8,13,17,4,3,18,9,16,2,1,14,12)]
-plaus_version <- re_ordered
-for (i in 1:length(crit_words_implaus)) {
-  plaus_version[i] <- gsub(crit_words_implaus[i], crit_words_plaus[i], re_ordered[str_detect(re_ordered, crit_words_implaus[i])])
-  if (i == 18) {
-    plaus_version[i] <- "stormswerereportednearourcoastsowewereadvisedtostaysafe"
-  }
-}
+plaus_version <- c("momadoptedadogbutthebabywasupsetbyallthebarks",                
+                   "iftheknightseesthebeautyoftheprincesshisheartisgoingtoswell",  
+                   "thebuilderknockeddownthewalltofindmoldinfestedwood",           
+                   "atruckranontopofaballthatshranktoaflatrounddisk",              
+                   "ifkyleusesthewetmopthenthetileswillbeshiny",                   
+                   "thelumberjacksawedthelogsinhalftopreparefortheconstruction",   
+                   "theteacherlosthergoldringatthecrowdedshoppingmall",            
+                   "emmalitsomefireworksonnewyearseve",
+                   "mymomwantsmetodosomanychoresandnagsmeifidontfinishthemquickly",
+                   "theyenjoyedabeautifuldaybeneaththesun",
+                   "thetorchflamedradiantlyinthedarknight",
+                   "tonyisshyaroundgirlsashisticsstartwithnopriorwarning",
+                   "sightseersboardedthelinerearly",
+                   "thisjobwillleadtoagaininskillandconfidence",
+                   "jamilahalvedanonionbecauseusingafullonewasunnecessary",
+                   "hedecidedtowarnhisbossabouttheissue",
+                   "noahsbakerymakeslemonwafercookiessocrunchyanddelicious",
+                   "stormswerereportednearourcoastsowewereadvisedtostaysafe",
+                   "hetookaimthenthrewthedartstraightatthebullseye",              
+                   "in1390kingrichardiibuiltamoatcirclinghiscity")
 
 
 # coef of leg -2.1305

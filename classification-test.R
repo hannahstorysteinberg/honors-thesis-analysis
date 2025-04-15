@@ -1,18 +1,38 @@
 
 test_df <- data.frame(subj = 1:10, sent = 1:10, )
 
+implaus_version <- c("momadoptedadogbutthebabywasupsetbyallthebanks",                
+                     "iftheknightseesthebeautyoftheprincesshisheartisgoingtosmell",  
+                     "thebuilderknockeddownthewalltofindgoldinfestedwood",           
+                     "atruckranontopofaballthatshranktoaflatrounddesk",              
+                     "ifkyleusesthewetmapthenthetileswillbeshiny",                   
+                     "thelumberjacksavedthelogsinhalftopreparefortheconstruction",   
+                     "theteacherlosthergoldringatthecrowdedshoppingball",            
+                     "emmahitsomefireworksonnewyearseve",                            
+                     "mymomwantsmetodosomanychoresandnapsmeifidontfinishthemquickly",
+                     "theyenjoyedabeautifuldaybeneaththerun",                        
+                     "thetorchblamedradiantlyinthedarknight",                        
+                     "tonyisshyaroundgirlsashistiesstartwithnopriorwarning",         
+                     "sightseersboardedtheliverearly",                               
+                     "thisjobwillleadtoaraininskillandconfidence",                   
+                     "jamilahaltedanonionbecauseusingafullonewasunnecessary",        
+                     "hedecidedtowarmhisbossabouttheissue",                          
+                     "noahsbakerymakeslemonwatercookiessocrunchyanddelicious",       
+                     "stormswerereportedhearourcoastsowewereadvisedtostaysafe",      
+                     "hetookaimthenthrewthepartstraightatthebullseye",              
+                     "in1390kingrichardiibuiltameatcirclinghiscity")
 
-plaus_version <- c("momadoptedadogbutthebabywasupsetbyallthebarks", 
-                   "iftheknightseesthebeautyoftheprincesshisheartisgoingtoswell", 
-                   "thebuilderknockeddownthewalltofindmoldinfestedwood",
-                   "atruckranontopofaballthatshranktoaflatrounddisk",
-                   "ifkyleusesthewetmopthenthetileswillbeshiny", 
-                   "thelumberjacksawedthelogsinhalftopreparefortheconstruction",
-                   "atruckranontopofamallthatshranktoaflatrounddesk",
+plaus_version <- c("momadoptedadogbutthebabywasupsetbyallthebarks",                
+                   "iftheknightseesthebeautyoftheprincesshisheartisgoingtoswell",  
+                   "thebuilderknockeddownthewalltofindmoldinfestedwood",           
+                   "atruckranontopofaballthatshranktoaflatrounddisk",              
+                   "ifkyleusesthewetmopthenthetileswillbeshiny",                   
+                   "thelumberjacksawedthelogsinhalftopreparefortheconstruction",   
+                   "theteacherlosthergoldringatthecrowdedshoppingmall",            
                    "emmalitsomefireworksonnewyearseve",                            
                    "mymomwantsmetodosomanychoresandnagsmeifidontfinishthemquickly",
                    "theyenjoyedabeautifuldaybeneaththesun",                        
-                   "thetorchflamedradiantlyinthedarknight",                       
+                   "thetorchflamedradiantlyinthedarknight",                        
                    "tonyisshyaroundgirlsashisticsstartwithnopriorwarning",         
                    "sightseersboardedthelinerearly",                               
                    "thisjobwillleadtoagaininskillandconfidence",                   
@@ -20,8 +40,8 @@ plaus_version <- c("momadoptedadogbutthebabywasupsetbyallthebarks",
                    "hedecidedtowarnhisbossabouttheissue",                          
                    "noahsbakerymakeslemonwafercookiessocrunchyanddelicious",       
                    "stormswerereportednearourcoastsowewereadvisedtostaysafe",      
-                   "hetookaimthenthrewthedartstraightatthebullseye",               
-                   "in1390kingrichardbuiltamoatcirclinghiscity")
+                   "hetookaimthenthrewthedartstraightatthebullseye",              
+                   "in1390kingrichardiibuiltamoatcirclinghiscity")
 
 
 changed_df <- select(test_df, c("subj","sent","value", "text", "leg", "sim"))
@@ -31,14 +51,6 @@ rows_to_discard <- NA
 
 crit_words_implaus <- c("banks","smell","gold","desk","map","saved","ball","hit","naps","run","blamed","ties","liver","rain","halted","warm","water","hear","part","meat")
 crit_words_plaus <- c("barks","swell","mold","disk","mop","sawed","mall","lit","nags","sun","flamed","tics","liner","gain","halved","warn","wafer","near","dart","moat")
-re_ordered <- unique(df_main_crit$text)[c(19,10,5,20,11,7,15,6,8,13,17,4,3,18,9,16,2,1,14,12)]
-plaus_version <- re_ordered
-for (i in 1:length(crit_words_implaus)) {
-  plaus_version[i] <- gsub(crit_words_implaus[i], crit_words_plaus[i], re_ordered[str_detect(re_ordered, crit_words_implaus[i])])
-  if (i == 18) {
-    plaus_version[i] <- "stormswerereportednearourcoastsowewereadvisedtostaysafe"
-  }
-}
 
 for (i in 1:nrow(changed_df)) {
   cur_value <- changed_df$value[i]
