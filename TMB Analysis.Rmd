@@ -1,0 +1,670 @@
+---
+title: "TMB Analysis"
+author: "Amanda Montoya"
+date: "4/21/2022"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r, warning=FALSE, message=FALSE}
+options(digits=2)
+
+#Libraries
+library(readxl)
+library(dplyr)
+library(ggformula)
+library(mosaic)
+library(lsr)
+library(car)
+library(psych)
+library(effsize)
+library(MASS)
+library(jtools)
+
+#source("process.R")
+```
+
+Read in data, will need to change file name
+```{r}
+dat <- read_excel("TMB FINAL RAW DATA_FINAL_NOID_523.xlsx")
+str(dat[,1:100])
+str(dat[,101:ncol(dat)])
+```
+
+# Data Cleaning
+```{r}
+#create variable which is stereotype threat condition
+dat$ThreatCondition <- recode_factor(dat$Condition, "A" = "AST", "AA" = "AST", "WA" = "AST", "B" = "BST", "BB" = "BST", "WB" = "BST") 
+#Create variable for avatar race
+dat$AvatarRace <- recode_factor(dat$Condition, "A" = "AB", "AA" = "AB", "WA" = "W", "B" = "AB", "BB" = "AB", "WB" = "W")
+dat$AvatarRace <- relevel(dat$AvatarRace, ref = "W")
+#Change Condition to be a factor
+dat$Condition <- recode_factor(dat$Condition, "A" = "AA", "B" = "BB") 
+dat$Condition <- factor(dat$Condition)
+```
+
+Sample size calculations
+```{r}
+N <- nrow(dat)
+Nucla <- nrow(dat[(dat$RecruitmentMethod == 2)|(dat$RecruitmentMethod == 3),])
+Nprolific <- nrow(dat[(dat$RecruitmentMethod == 1),])
+Nsubjectpool <- nrow(dat[(dat$RecruitmentMethod == 2),])
+# Campus recruitment through flyers started, but did not receive
+# any sign-ups before hitting desired N for the subject pool
+#Ncampus <- nrow(dat[(dat$RecruitmentMethod == 3),])
+```
+
+remove folks who need to be excluded
+```{r}
+#Exclude folks with greater than 10% of trials longer than 10,000ms
+dat$ExcludeParticipant[dat$IAT_propRT10K > .1] <- 1
+dat$ReasonExclude[dat$IAT_propRT10K > .1] <- 6
+
+
+Nexclude <- sum(dat$ExcludeParticipant)
+
+#summarize why excluded
+ExclusionTable <- table(dat$ReasonExclude[dat$ExcludeParticipant==1])
+names(ExclusionTable) <- c("Participant arrived too late", "Research assistant error", "Participant left interaction", "Non-binary gender identity", "Improbable response pattern")
+
+#exclusions by recruitment method
+mosaic::tally(ExcludeParticipant~RecruitmentMethod, data = dat, format = "proportion")
+
+#exclude participants
+dat <- dat[dat$ExcludeParticipant == 0,]
+```
+# Demographics
+
+```{r}
+Genderdat <- mosaic::tally(Gender~RecruitmentMethod, data = dat, format = "proportion")*100
+
+Agedat <- dat %>%
+  group_by(RecruitmentMethod)%>%
+  summarize(average = mean(Age, na.rm=TRUE), sd = sd(Age, na.rm = TRUE), missing = sum(is.na(Age)))
+
+dat$USBorn <- factor(dat$USBorn, levels = c(1,2))
+USBorndat <- tally(USBorn~RecruitmentMethod, data = dat, format = "proportion")*100
+
+dat$SL_Use <- factor(dat$SL_Use, levels = c(1,2))
+SLUsedat <- tally(SL_Use~RecruitmentMethod, data = dat, format = "proportion")*100
+
+dat$VW <- factor(dat$VW, levels = c(1,2))
+VWUsedat <- tally(VW~RecruitmentMethod, data = dat, format = "proportion")*100
+```
+
+## Calculating Outcome Variables
+
+### Ethnocultural Emphathy
+```{r}
+#ethnocultural empathy
+
+#reverse code 1, 2, 5, 8, 10, 16, 17, 21, 27, 28, 29, 31
+dat <- transform(dat, EE1_r = 7-EE1,
+                      EE2_r = 7-EE2,
+                      EE5_r = 7-EE5,
+                      EE8_r = 7-EE8,
+                      EE10_r = 7-EE1,
+                      EE16_r = 7-EE16,
+                      EE17_r = 7-EE17,
+                      EE21_r = 7-EE21,
+                      EE27_r = 7-EE27,
+                      EE28_r = 7-EE28,
+                      EE29_r = 7-EE29,
+                      EE31_r = 7-EE31)
+
+dat <- dat %>% rowwise() %>% mutate(EEmean = mean(c_across(c(EE1_r, EE2_r, EE3, EE4, EE5_r, EE6, EE7, EE8_r, EE9, EE10_r, EE11, EE12, EE13, EE14, EE15, EE16_r, EE17_r, EE18, EE19, EE20, EE21_r, EE22, EE23, EE24, EE25, EE26, EE27_r, EE28_r, EE29_r,EE30, EE31_r)), na.rm = TRUE))
+#note if someone responded to some but not all questions in the scale, the average was taken over the items answered
+
+#calculate reliability
+# Use this code if there is variability in EE27
+EEdat <- dplyr::select(dat, c(EE1_r, EE2_r, EE3, EE4, EE5_r, EE6, EE7, EE8_r, EE9, EE10_r, EE11, EE12, EE13, EE14, EE15, EE16_r, EE17_r, EE18, EE19, EE20, EE21_r, EE22, EE23, EE24, EE25, EE26, EE27_r, EE28_r, EE29_r,EE30, EE31_r))
+psych::alpha(EEdat, check.keys=FALSE)
+#check correlation of individual items with total score
+cor(dplyr::select(dat, c(EE1_r, EE2_r, EE3, EE4, EE5_r, EE6, EE7, EE8_r, EE9, EE10_r, EE11, EE12, EE13, EE14, EE15, EE16_r, EE17_r, EE18, EE19, EE20, EE21_r, EE22, EE23, EE24, EE25, EE26, EE27_r, EE28_r, EE29_r,EE30, EE31_r, EEmean)), use = "pairwise.complete.obs")
+alphaEE <- psych::alpha(EEdat, check.keys=FALSE)[1]$total$std.alpha
+
+NMissEE <- sum(is.na(dat$EEmean))
+
+omegaEE <- omega(EEdat, nfactors = 1)$omega.tot
+```
+
+
+### Awareness of racism
+```{r}
+#Reverse code 2, 4, 5, 6, 8, 11, 12, 15, 17, 20
+dat <- transform(dat, CB2_r = 7-CB2,
+                      CB4_r = 7-CB4,
+                      CB5_r = 7-CB5,
+                      CB6_r = 7-CB6,
+                      CB8_r = 7-CB8,
+                      CB11_r = 7-CB11,
+                      CB12_r = 7-CB12,
+                      CB15_r = 7-CB15,
+                      CB17_r = 7-CB17,
+                      CB20_r = 7-CB20)
+
+dat <- dat %>% rowwise() %>% mutate(CBmean = 7-mean(c_across(c(CB1, CB2_r, CB3, CB4_r, CB5_r, CB6_r, CB7, CB8_r, CB9, CB10, CB11_r, CB12_r, CB13, CB14, CB15_r, CB16, CB17_r, CB18, CB19, CB20_r)), na.rm = TRUE))
+#note if someone responded to some but not all questions in the scale, the average was taken over the items answered
+
+#calculate reliability
+CBdat <- dplyr::select(dat, c(CB1, CB2_r, CB3, CB4_r, CB5_r, CB6_r, CB7, CB8_r, CB9, CB10, CB11_r, CB12_r, CB13, CB14, CB15_r, CB16, CB17_r, CB18, CB19, CB20_r))
+psych::alpha(CBdat)
+alphaAOR <- psych::alpha(CBdat)[1]$total$std.alpha
+omegaAOR <- omega(CBdat, nfactors = 1)$omega.tot
+
+NMissAOR <- sum(is.na(dat$CBmean))
+```
+
+## Assumption Testing
+
+"Initial data exploration steps will be taken to examine normality and homogeneity of variance, appropriate transformations or adjustments to statistical methods will be made if normality or homogeneity of variance are violated."
+
+### Normality
+```{r}
+# Ethnic Essentialism
+EEmodel <- lm(EEmean~ThreatCondition*AvatarRace, data = dat)
+EEresid <- resid(EEmodel)
+gf_histogram(~EEresid)%>%
+    gf_density()
+qqPlot(EEresid)
+shapiro.test(EEresid)
+EEnorm <- shapiro.test(EEresid)$p.value
+
+# Color Blind Ideology
+CBmodel <- lm(CBmean~ThreatCondition*AvatarRace, data = dat)
+CBresid <- resid(CBmodel)
+gf_histogram(~CBresid)%>%
+    gf_density()
+qqPlot(CBresid)
+shapiro.test(CBresid)
+CBnorm <- shapiro.test(CBresid)$p.value
+if(CBnorm < .01) CBnorm <- "<.01"
+
+#IAT
+IATmodel <- lm(IAT_D~ThreatCondition*AvatarRace, data = dat)
+IATresid <- resid(IATmodel)
+gf_histogram(~IATresid)%>%
+    gf_density()
+qqPlot(IATresid)
+shapiro.test(IATresid)
+IATnorm <- shapiro.test(IATresid)$p.value
+```
+
+### Homogeneity of Variance
+
+#### Ethnic Essentialism
+```{r}
+favstats(EEresid~Condition, data = dat)
+gf_point(EEresid~Condition, data = dat[complete.cases(dat$EEmean),])
+leveneTest(EEresid ~ Condition, data = dat[complete.cases(dat$EEmean),])
+EEhet <- leveneTest(EEresid ~ Condition, data = dat[complete.cases(dat$EEmean),])$`Pr(>F)`[1]
+```
+#### Color Blind Racial Ideology
+```{r}
+favstats(CBresid~Condition, data = dat)
+gf_point(CBresid~Condition, data = dat[complete.cases(dat$CBmean),])
+leveneTest(CBresid ~ Condition, data = dat[complete.cases(dat$CBmean),])
+CBhet <- leveneTest(CBresid ~ Condition, data = dat[complete.cases(dat$CBmean),])$`Pr(>F)`[1]
+```
+#### IAT 
+```{r}
+favstats(IATresid~dat$Condition[!is.na(dat$IAT_D)])
+gf_point(IATresid~dat$Condition[!is.na(dat$IAT_D)])
+leveneTest(IATresid ~ dat$Condition[!is.na(dat$IAT_D)])
+IAThet <- leveneTest(IATresid ~ dat$Condition[!is.na(dat$IAT_D)])$`Pr(>F)`[1]
+```
+
+## Outcome Analyses (Hypothesis 1)
+
+"Hypothesis 1 a and b will be tested using a 2 (condition) X 3 (avatar race) ANOVA on each outcome: ethnocultural empathy (Hypothesis 1a) and awareness of racism (Hypothesis 1b)."
+
+### Ethnocultural Empathy
+```{r}
+# Summary statistics
+EEfavstats <- favstats(EEmean~ThreatCondition+AvatarRace, data = dat)
+EEfavstats
+EE.AST.W.mean <- EEfavstats$mean[1]
+EE.BST.W.mean <- EEfavstats$mean[2]
+EE.AST.A.mean <- EEfavstats$mean[3]
+EE.BST.B.mean <- EEfavstats$mean[4]
+EE.AST.W.sd <- EEfavstats$sd[1]
+EE.BST.W.sd <- EEfavstats$sd[2]
+EE.AST.A.sd <- EEfavstats$sd[3]
+EE.BST.B.sd <- EEfavstats$sd[4]
+
+# Fit the model
+EEmodel <- lm(EEmean~AvatarRace*ThreatCondition, data = dat)
+summary(EEmodel)
+Anova(EEmodel, type = 3)
+etaSquared(EEmodel)
+#AvatarRace effect is contrast combining across both conditions
+
+#df1, df2, F, p, eta-squared for AvatarRace, ThreatCondition, and Interaction
+EEmodel.AR.df <- Anova(EEmodel, type = 3)$Df[1]
+EEmodel.TC.df <- Anova(EEmodel, type = 3)$Df[2]
+EEmodel.Int.df <- Anova(EEmodel, type = 3)$Df[3]
+EEmodel.df2 <- EEmodel$df.residual
+
+EEmodel.AR.F <- Anova(EEmodel, type = 3)$`F value`[1]
+EEmodel.TC.F <- Anova(EEmodel, type = 3)$`F value`[2]
+EEmodel.Int.F <- Anova(EEmodel, type = 3)$`F value`[3]
+
+EEmodel.AR.p <- Anova(EEmodel, type = 3)$`Pr(>F)`[1]
+if(EEmodel.AR.p < .01) EEmodel.AR.p <- "<.01"
+EEmodel.TC.p <- Anova(EEmodel, type = 3)$`Pr(>F)`[2]
+if(EEmodel.TC.p < .01) EEmodel.TC.p <- "<.01"
+EEmodel.Int.p <- Anova(EEmodel, type = 3)$`Pr(>F)`[3]
+if(EEmodel.Int.p < .01) EEmodel.Int.p <- "<.01"
+
+EEmodel.AR.etasq <- etaSquared(EEmodel)[1,1]
+if(EEmodel.AR.etasq < .01) EEmodel.AR.etasq <- "<.01"
+EEmodel.TC.etasq <- etaSquared(EEmodel)[2,1]
+if(EEmodel.TC.etasq < .01) EEmodel.TC.etasq <- "<.01"
+EEmodel.Int.etasq <- etaSquared(EEmodel)[3,1]
+if(EEmodel.Int.etasq < .01) EEmodel.Int.etasq <- "<.01"
+
+#contrasts
+levels(dat$Condition)
+CWvsA <- c(1,0,-1,0)
+CWvsB <- c(0,1,0,-1)
+CWAvsWB <- c(0,0,1,-1)
+ConditionContrasts <- cbind(CWvsA, CWvsB,CWAvsWB)
+# https://www.youtube.com/watch?v=ky6rBqQUW4U
+contrasts(dat$Condition) = ConditionContrasts
+EECmodel <- aov(EEmean~Condition, data = dat)
+Anova(lm(EEmean~Condition, data = dat), contrast=T)
+AnovaEEC
+EECmodelsum <- summary(EECmodel, split = list(Condition = list("WvsA"=1, "WvsB"=2, "WAvsWB"=3)))
+EECmodelsum
+
+
+# Contrast results provide information within each Stereotype Threat Condition
+
+EEC.WvsA.df <- EECmodelsum[[1]]$Df[2]
+EEC.WvsB.df <- EECmodelsum[[1]]$Df[3]
+EEC.df2 <- EECmodelsum[[1]]$Df[5]
+
+EEC.WvsA.F <- EECmodelsum[[1]]$`F value`[2]
+EEC.WvsB.F <- EECmodelsum[[1]]$`F value`[3]
+
+EEC.WvsA.p <- EECmodelsum[[1]]$`Pr(>F)`[2]
+if(EEC.WvsA.p < .01) EEC.WvsA.p <- "<.01"
+EEC.WvsB.p <- EECmodelsum[[1]]$`Pr(>F)`[3]
+if(EEC.WvsB.p < .01) EEC.WvsB.p <- "<.01"
+
+#effect sizes
+cohen.d(dat$EEmean, dat$AvatarRace, na.rm=TRUE)
+EE.WvsA.d <- cohen.d(dat$EEmean[dat$ThreatCondition=="AST"], dat$AvatarRace[dat$ThreatCondition=="AST"], na.rm=TRUE)$estimate
+EE.WvsB.d <- cohen.d(dat$EEmean[dat$ThreatCondition=="BST"], dat$AvatarRace[dat$ThreatCondition=="BST"], na.rm=TRUE)$estimate
+
+#plots
+gf_boxplot(EEmean~AvatarRace, data = dat[complete.cases(dat$EEmean),], fill =~AvatarRace)%>%
+  gf_facet_grid(~ThreatCondition)
+
+
+EEplotstats <- favstats(EEmean~AvatarRace+ThreatCondition, data = dat[complete.cases(dat$EEmean),])
+EEplotstats$CIlow <- EEplotstats$mean - 1.96*EEplotstats$sd/sqrt(EEplotstats$n)
+EEplotstats$CIhigh <- EEplotstats$mean + 1.96*EEplotstats$sd/sqrt(EEplotstats$n)
+EEplotstats$AvatarRace <- c("W", "AB", "W", "AB")
+EEplotstats$ThreatCondition <- c("AST", "AST", "BST", "BST")
+
+ggplot(dat[complete.cases(dat$EEmean),], aes(AvatarRace, EEmean)) +
+  ylab("Ethnocultural Empathy")+
+  xlab("Avatar Race")+
+  geom_jitter(position = position_jitter(0.1), color = "darkgray") + 
+  geom_pointrange(aes(y = mean, ymin = CIlow, ymax = CIhigh), data = EEplotstats)+
+  facet_wrap(~ThreatCondition)+
+  theme_apa()
+```
+
+### Awareness of racism (Color Blind Ideology)
+```{r}
+# Summary statistics
+CBfavstats <- favstats(CBmean~ThreatCondition+AvatarRace, data = dat)
+CBfavstats
+CB.AST.W.mean <- CBfavstats$mean[1]
+CB.BST.W.mean <- CBfavstats$mean[2]
+CB.AST.A.mean <- CBfavstats$mean[3]
+CB.BST.B.mean <- CBfavstats$mean[4]
+CB.AST.W.sd <- CBfavstats$sd[1]
+CB.BST.W.sd <- CBfavstats$sd[2]
+CB.AST.A.sd <- CBfavstats$sd[3]
+CB.BST.B.sd <- CBfavstats$sd[4]
+
+# Fit the model
+CBmodel <- lm(CBmean~AvatarRace*ThreatCondition, data = dat)
+summary(CBmodel)
+Anova(CBmodel, type = 3)
+etaSquared(EEmodel)
+#AvatarRace effect is contrast combining across both conditions
+
+#df1, df2, F, p, eta-squared for AvatarRace, ThreatCondition, and Interaction
+CBmodel.AR.df <- Anova(CBmodel, type = 3)$Df[1]
+CBmodel.TC.df <- Anova(CBmodel, type = 3)$Df[2]
+CBmodel.Int.df <- Anova(CBmodel, type = 3)$Df[3]
+CBmodel.df2 <- CBmodel$df.residual
+
+CBmodel.AR.F <- Anova(CBmodel, type = 3)$`F value`[1]
+CBmodel.TC.F <- Anova(CBmodel, type = 3)$`F value`[2]
+CBmodel.Int.F <- Anova(CBmodel, type = 3)$`F value`[3]
+
+CBmodel.AR.p <- Anova(CBmodel, type = 3)$`Pr(>F)`[1]
+if(CBmodel.AR.p < .01) CBmodel.AR.p <- "<.01"
+CBmodel.TC.p <- Anova(CBmodel, type = 3)$`Pr(>F)`[2]
+if(CBmodel.TC.p < .01) CBmodel.TC.p <- "<.01"
+CBmodel.Int.p <- Anova(CBmodel, type = 3)$`Pr(>F)`[3]
+if(CBmodel.Int.p < .01) CBmodel.Int.p <- "<.01"
+
+CBmodel.AR.etasq <- etaSquared(CBmodel)[1,1]
+if(CBmodel.AR.etasq < .01) CBmodel.AR.etasq <- "<.01"
+CBmodel.TC.etasq <- etaSquared(CBmodel)[2,1]
+if(CBmodel.TC.etasq < .01) CBmodel.TC.etasq <- "<.01"
+CBmodel.Int.etasq <- etaSquared(CBmodel)[3,1]
+if(CBmodel.Int.etasq < .01) CBmodel.Int.etasq <- "<.01"
+
+#contrasts
+CBCmodel <- aov(CBmean~Condition, data = dat)
+Anova(CBmean~Condition, data = dat)
+CBCmodelsum <- summary(CBCmodel, split = list(Condition = list("WvsA"=1, "WvsB"=2, "WAvsWB"=3)))
+CBCmodelsum
+# Contrast results provide information within each Stereotype Threat Condition
+
+CBC.WvsA.df <- CBCmodelsum[[1]]$Df[2]
+CBC.WvsB.df <- CBCmodelsum[[1]]$Df[3]
+CBC.df2 <- CBCmodelsum[[1]]$Df[5]
+
+CBC.WvsA.F <- CBCmodelsum[[1]]$`F value`[2]
+CBC.WvsB.F <- CBCmodelsum[[1]]$`F value`[3]
+
+CBC.WvsA.p <- CBCmodelsum[[1]]$`Pr(>F)`[2]
+if(CBC.WvsA.p < .01) CBC.WvsA.p <- "<.01"
+CBC.WvsB.p <- CBCmodelsum[[1]]$`Pr(>F)`[3]
+if(CBC.WvsB.p < .01) CBC.WvsB.p <- "<.01"
+
+#effect sizes
+cohen.d(dat$CBmean, dat$AvatarRace, na.rm=TRUE)
+CB.WvsA.d <- cohen.d(dat$CBmean[dat$ThreatCondition=="AST"], dat$AvatarRace[dat$ThreatCondition=="AST"], na.rm=TRUE)$estimate
+CB.WvsB.d <- cohen.d(dat$CBmean[dat$ThreatCondition=="BST"], dat$AvatarRace[dat$ThreatCondition=="BST"], na.rm=TRUE)$estimate
+
+#plots
+gf_boxplot(CBmean~AvatarRace, data = dat, fill =~AvatarRace)%>%
+  gf_facet_grid(~ThreatCondition)
+
+CBplotstats <- favstats(CBmean~AvatarRace+ThreatCondition, data = dat[complete.cases(dat$CBmean),])
+CBplotstats$CIlow <- CBplotstats$mean - 1.96*CBplotstats$sd/sqrt(CBplotstats$n)
+CBplotstats$CIhigh <- CBplotstats$mean + 1.96*CBplotstats$sd/sqrt(CBplotstats$n)
+CBplotstats$AvatarRace <- c("W", "AB", "W", "AB")
+CBplotstats$ThreatCondition <- c("AST", "AST", "BST", "BST")
+
+ggplot(dat[complete.cases(dat$CBmean),], aes(AvatarRace, CBmean)) +
+  ylab("Awareness of Racism")+
+  xlab("Avatar Race")+
+  geom_jitter(position = position_jitter(0.1), color = "darkgray") + 
+  geom_pointrange(aes(y = mean, ymin = CIlow, ymax = CIhigh), data = CBplotstats)+
+  facet_wrap(~ThreatCondition)+
+  theme_apa()
+```
+
+### IAT
+
+"Hypotheses 1c will be tested using two one-way ANOVAs by avatar race with IAT score as the outcome, one for those participants who completed the anti-Black IAT and one for those participants who completed the anti-Asian IAT. For the anti-Black IAT, a significant contrast of means comparing Black vs White and Asian will provide evidence for Hypothesis 1c only if the Black mean is higher than the White/Asian mean. For the anti-Asian IAT, Hypothesis 1c will be tested identically, but using participants who completed the anti-Asian IAT, and a contrast comparing Asian vs. Black and White."
+```{r}
+# Summary statistics
+IATfavstats <- favstats(IAT_D~ThreatCondition+AvatarRace, data = dat)
+IATfavstats
+IAT.AST.W.mean <- IATfavstats$mean[1]
+IAT.BST.W.mean <- IATfavstats$mean[2]
+IAT.AST.A.mean <- IATfavstats$mean[3]
+IAT.BST.B.mean <- IATfavstats$mean[4]
+IAT.AST.W.sd <- IATfavstats$sd[1]
+IAT.BST.W.sd <- IATfavstats$sd[2]
+IAT.AST.A.sd <- IATfavstats$sd[3]
+IAT.BST.B.sd <- IATfavstats$sd[4]
+
+# Fit the model
+IATmodel <- lm(IAT_D~AvatarRace*ThreatCondition, data = dat)
+summary(IATmodel)
+anova(IATmodel)
+#AvatarRace effect is contrast combining across both conditions
+etaSquared(EEmodel)
+
+#df1, df2, F, p, eta-squared for AvatarRace, ThreatCondition, and Interaction
+IATmodel.AR.df <- anova(IATmodel)$Df[1]
+IATmodel.TC.df <- anova(IATmodel)$Df[2]
+IATmodel.Int.df <- anova(IATmodel)$Df[3]
+IATmodel.df2 <- IATmodel$df.residual
+
+IATmodel.AR.F <- anova(IATmodel)$`F value`[1]
+IATmodel.TC.F <- anova(IATmodel)$`F value`[2]
+IATmodel.Int.F <- anova(IATmodel)$`F value`[3]
+
+IATmodel.AR.p <- anova(IATmodel)$`Pr(>F)`[1]
+if(IATmodel.AR.p < .01) IATmodel.AR.p <- "<.01"
+IATmodel.TC.p <- anova(IATmodel)$`Pr(>F)`[2]
+if(IATmodel.TC.p < .01) IATmodel.TC.p <- "<.01"
+IATmodel.Int.p <- anova(IATmodel)$`Pr(>F)`[3]
+if(IATmodel.Int.p < .01) IATmodel.Int.p <- "<.01"
+
+IATmodel.AR.etasq <- etaSquared(IATmodel)[1,1]
+if(IATmodel.AR.etasq < .01) IATmodel.AR.etasq <- "<.01"
+IATmodel.TC.etasq <- etaSquared(IATmodel)[2,1]
+if(IATmodel.TC.etasq < .01) IATmodel.TC.etasq <- "<.01"
+IATmodel.Int.etasq <- etaSquared(IATmodel)[3,1]
+if(IATmodel.Int.etasq < .01) IATmodel.Int.etasq <- "<.01"
+
+#contrasts
+IATCmodel <- aov(IAT_D~Condition, data = dat)
+IATCmodelsum <- summary(IATCmodel, split = list(Condition = list("WvsA"=1, "WvsB"=2, "WAvsWB"=3)))
+IATCmodelsum
+# Contrast results provide information within each Stereotype Threat Condition
+# Maybe check if White vs. White scores are different
+
+IATC.WvsA.df <- IATCmodelsum[[1]]$Df[2]
+IATC.WvsB.df <- IATCmodelsum[[1]]$Df[3]
+IATC.df2 <- IATCmodelsum[[1]]$Df[5]
+
+IATC.WvsA.F <- IATCmodelsum[[1]]$`F value`[2]
+IATC.WvsB.F <- IATCmodelsum[[1]]$`F value`[3]
+
+IATC.WvsA.p <- IATCmodelsum[[1]]$`Pr(>F)`[2]
+IATC.WvsB.p <- IATCmodelsum[[1]]$`Pr(>F)`[3]
+
+#effect sizes
+cohen.d(dat$IAT_D, dat$AvatarRace, na.rm=TRUE)
+IAT.WvsA.d <- cohen.d(dat$IAT_D[dat$ThreatCondition=="AST"], dat$AvatarRace[dat$ThreatCondition=="AST"], na.rm=TRUE)$estimate
+IAT.WvsB.d <- cohen.d(dat$IAT_D[dat$ThreatCondition=="BST"], dat$AvatarRace[dat$ThreatCondition=="BST"], na.rm=TRUE)$estimate
+
+#plots
+gf_boxplot(IAT_D~AvatarRace, data = dat, fill =~AvatarRace)%>%
+  gf_facet_grid(~ThreatCondition)
+
+IATplotstats <- favstats(IAT_D~AvatarRace+ThreatCondition, data = dat[complete.cases(dat$IAT_D),])
+IATplotstats$CIlow <- IATplotstats$mean - 1.96*IATplotstats$sd/sqrt(IATplotstats$n)
+IATplotstats$CIhigh <- IATplotstats$mean + 1.96*IATplotstats$sd/sqrt(IATplotstats$n)
+IATplotstats$AvatarRace <- c("W", "AB", "W", "AB")
+IATplotstats$ThreatCondition <- c("AST", "AST", "BST", "BST")
+
+ggplot(dat[complete.cases(dat$IAT_D),], aes(AvatarRace, IAT_D)) +
+  ylab("IAT")+
+  xlab("Avatar Race")+
+  geom_jitter(position = position_jitter(0.1), color = "darkgray") + 
+  geom_pointrange(aes(y = mean, ymin = CIlow, ymax = CIhigh), data = IATplotstats)+
+  facet_wrap(~ThreatCondition)+
+  theme_apa()
+```
+
+## Mediation Analyses (Hypothesis 2)
+
+2.	Among those in the stereotyped threat condition, the relationships between avatar race and implicit bias and awareness of racism will be mediated by ethnocultural empathy. Specifically:
+a.	Among those in the Black stereotyped threat condition, the relationship of Black avatar assignment and anti-Black implicit bias and awareness of racism will be mediated by ethnocultural empathy, where being assigned a Black avatar results in greater ethnocultural empathy, which then predicts lower anti-Black implicit bias and higher awareness of racism.
+b.	Among those in the Asian stereotyped threat condition, the relationship of Asian avatar assignment and anti-Asian implicit bias and awareness of racism will be mediated by ethnocultural empathy, where being assigned an Asian avatar results in greater ethnocultural empathy, which then predicts lower anti-Asian implicit bias and higher awareness of racism.
+
+"Hypotheses 2 will be tested using regression-based moderated mediation analyses (Model 8 using the PROCESS macro for SPSS) and bootstrap confidence intervals for the conditional indirect effects (See Figure 1). Avatar Race will be the independent variable, Helmert coded to include a Black vs. White/Asian indirect effect (2a) and an Asian vs. Black/White indirect effect (2b). Hypothesis 2a will be supported if there is a significant conditional indirect effect of Black vs. White/Asian avatar on anti-Black implicit bias and awareness of racism through ethnocultural empathy, for those in the BST condition. Hypothesis 3a will be supported if there is a significant conditional indirect effect of Asian vs. White/Black avatar on anti-Asian implicit bias and awareness of racism through ethnocultural empathy."
+
+**Note**: There are some errors in alignment of the hypotheses in this section. Additionally we ended up using a slightly different coding scheme for Avatar Race so that we would have a full factorial design, which was easier for analysis. 
+
+```{r}
+dat$AvatarRace.num <- as.numeric(dat$AvatarRace)
+dat$ThreatCondition.num <- as.numeric(dat$ThreatCondition)
+```
+
+#### Ethnic Essentialism
+```{r}
+EEprocess <- process(data = dat, m = "EEmean", y = "IAT_D", x = "AvatarRace.num", w = "ThreatCondition.num", model = 8, seed = 433643, progress=0, save = 2)
+EEprocess
+```
+
+#### Colorblind Ideology
+```{r}
+CBprocess <- process(data = dat, y = "CBmean", m = "EEmean", x = "AvatarRace.num", w = "ThreatCondition.num", model = 8, seed = 433643, progress = 0, save = 2)
+AORmmbp <- CBprocess[12,4]
+if(AORmmbp < .001) AORmmbp <- "<.01"
+CBprocess
+```
+
+# Results
+
+For ease of analysis we created two variables to represent the experimental condition: 1) Avatar Race, which was either "White" or "Non-White", and 2) Threat Condition: which was either Black Stereotype Threat (BST) or Asian Stereotype Threat (AST). This deviates slightly from our Stage 1 submission, as we originally planned to have an Avatar Race factor which was "White", "Black", or "Asian"; however this led to a partial factorial design which was needlessly complex. By including Avatar Race, Threat Condition, and their interaction, we maintain a full factorial design while still modeling the differences between Black and Asian avatar ratings through the interaction. 
+
+A total of `r N` participants completed the study (`r Nprolific` from Mturk, and `r Nucla` from UCLA). We excluded `r Nexclude` participants from analysis leaving a final sample of `r N-Nexclude`. See Table TK provides a summary of explanation of exclusions. Table TK provides a summary of the demographic characteristics of the final sample, broken up by recruitment method.
+
+`r ExclusionTable`
+
+| Recruitment Method| Male-Female-NB-Other (%)       | Age M (SD) | Born in US (%) | Previous Use SecondLife (%) | Previous Use Virtual World (%) |
+| :---              |    :----:        |     :---   | :---             |    :----:   |         ---: |
+| Mturk             |`r Genderdat[1,1]` - `r Genderdat[2,1]` - `r Genderdat[3,1]` - `r Genderdat[4,1]`|`r Agedat[1,2]`(`r Agedat[1,3]`)|`r USBorndat[1,1]`|`r SLUsedat[1,1]`|`r VWUsedat[1,1]`|
+| UCLA              |`r Genderdat[1,2]` - `r Genderdat[2,2]` - `r Genderdat[3,2]` - `r Genderdat[4,2]`|`r Agedat[2,2]`(`r Agedat[2,3]`)|`r USBorndat[1,2]`|`r SLUsedat[1,2]`|`r VWUsedat[1,2]`|
+
+Modeling assumptions of normality and homogeneity of variance were examined by fitting the proposed statistical models and examining descriptive summaries, plots, and statistical tests for the assumptions (Shapiro-Wilks test for normality and Levene's test for homogeneity of variance). Deviations from normality were observed in the EE ($p$ = `r EEnorm`) and CB variables ($p$ = `r CBnorm`) but not the IAT score ($p$ = `r IATnorm`). Due to reasonable sample size we continued with analysis as planned (See Exploratory Analyses for alternative analysis). Violations of homogeneity were not observed for EE ($p$ = `r EEhet`), CB ($p$ = `r CBhet`), or IAT ($p$ = `r IAThet`). Summaries, plots, and test results for assumption testing are available in the Supplemental Materials. 
+
+Prior to analysis we created summary scores for ethnocultural empathy and awareness of racism. We reverse coded the appropriate items (EE items: 1, 2, 5, 8, 10, 16, 17, 21, 27, 28, 29, 31  and AOR items: 2, 4, 5, 6, 8, 11, 12, 15, 17, 20), then averaged the items within each scale to get a score between 1 and 6 ($\alpha_{EE} =$ `r alphaEE`, $\alpha_{AOR} =$ `r alphaAOR`, $\omega_{EE} =$ `r omegaEE`, $\omega_{AOR} =$ `r omegaAOR`). [Maybe need to add footnote about single item that loads negatively for EE]. If participants did not respond to any items on the scale they were treated as missing: `r NMissEE` participants were missing on ethnocultural empathy, and `r NMissAOR` participants were missing on awareness of racism. If participants responded to some items, the average of the answered items was used. 
+
+[John needs to add explanation of IAT scoring]
+
+To test Hypothesis 1 we used a 2 (Avatar Race) X 2(Threat Condition) ANOVA on the three outcomes: a) Ethnocultural Empathy, b) Awareness of Racism, and c) IAT scores. We were predicting simple effects of Avatar Race in each Threat Condition (i.e., White vs. Asian in AST, White vs. Black in BST). We tested this using planned contrasts for each comparison. An $\alpha$-level of 0.05 was used for all tests. 
+
+For ethnocultural empathy the model showed a non-significant main effect of Avatar Race (F(`r EEmodel.AR.df`, `r EEmodel.df2`) = `r EEmodel.AR.F`, p = `r EEmodel.AR.p`, $\eta^2$ = `r EEmodel.AR.etasq`), a non-significant main effect of Threat Condition (F(`r EEmodel.TC.df`, `r EEmodel.df2`) = `r EEmodel.TC.F`, p = `r EEmodel.TC.p`, $\eta^2$ = `r EEmodel.TC.etasq`), and a non-significant interaction (F(`r EEmodel.Int.df`, `r EEmodel.df2`) = `r EEmodel.Int.F`, p = `r EEmodel.Int.p`, $\eta^2$ = `r EEmodel.Int.etasq`). See Figure TK for a visualization of the data from each group. In the Asian Stereotype Threat condition, participants operating Asian avatars did not significantly differ on levels of ethnocultural empathy (M = `r EE.AST.A.mean`, SD = `r EE.AST.A.sd`) compared to those operating White avatars (M = `r EE.AST.W.mean`, SD = `r EE.AST.W.sd`, F(`r EEC.WvsA.df`, `r EEC.df2`) = `r EEC.WvsA.F`, p = `r EEC.WvsA.p`, d = `r EE.WvsA.d`). In the Black Stereotype Threat condition, participants operating Black avatars did not significantly differ on ethnocultural empathy (M = `r EE.BST.B.mean`, SD = `r EE.BST.B.sd`) compared to those operating White avatars (M = `r EE.BST.W.mean`, SD = `r EE.BST.W.sd`, F(`r EEC.WvsB.df`, `r EEC.df2`) = `r EEC.WvsB.F`, p = `r EEC.WvsB.p`, d = `r EE.WvsB.d`). Overall, this suggest no support for Hypothesis 1a. 
+
+For awareness of racism the model showed a non-significant main effect of Avatar Race (F(`r CBmodel.AR.df`, `r CBmodel.df2`) = `r CBmodel.AR.F`, p = `r CBmodel.AR.p`, $\eta^2$ = `r CBmodel.AR.etasq`), a non-significant main effect of Threat Condition (F(`r CBmodel.TC.df`, `r CBmodel.df2`) = `r CBmodel.TC.F`, p = `r CBmodel.TC.p`, $\eta^2$ = `r CBmodel.TC.etasq`), and a non-significant interaction (F(`r CBmodel.Int.df`, `r CBmodel.df2`) = `r CBmodel.Int.F`, p = `r CBmodel.Int.p`, $\eta^2$ = `r CBmodel.Int.etasq`), See Figure TK). In the Asian Stereotype Threat condition, participants operating Asian avatars had no-different levels of awareness of racism (M = `r CB.AST.A.mean`, SD = `r CB.AST.A.sd`) compared to those operating White avatars (M = `r CB.AST.W.mean`, SD = `r CB.AST.W.sd`, F(`r CBC.WvsA.df`, `r CBC.df2`) = `r CBC.WvsA.F`, p = `r CBC.WvsA.p`, d = `r CB.WvsA.d`). In the Black Stereotype Threat condition, participants operating Black avatars had no-different levels of awareness of racism (M = `r CB.BST.B.mean`, SD = `r CB.BST.B.sd`) compared to those operating White avatars (M = `r CB.BST.W.mean`, SD = `r CB.BST.W.sd`, F(`r CBC.WvsB.df`, `r CBC.df2`) = `r CBC.WvsB.F`, p = `r CBC.WvsB.p`, d = `r CB.WvsB.d`). Overall, this suggest no support for Hypothesis 1b. 
+
+For implicit bias the model showed a significant main effect of Avatar Race (F(`r IATmodel.AR.df`, `r IATmodel.df2`) = `r IATmodel.AR.F`, p = `r IATmodel.AR.p`, $\eta^2$ = `r IATmodel.AR.etasq`), a non-significant main effect of Threat Condition (F(`r IATmodel.TC.df`, `r IATmodel.df2`) = `r IATmodel.TC.F`, p = `r IATmodel.TC.p`, $\eta^2$ = `r IATmodel.TC.etasq`), and a non-significant interaction (F(`r IATmodel.Int.df`, `r IATmodel.df2`) = `r IATmodel.Int.F`, p = `r IATmodel.Int.p`, $\eta^2$ = `r IATmodel.Int.etasq`), See Figure TK). In the Asian Stereotype Threat condition, participants operating Asian avatars had no-different levels of implicit bias towards Asians [NOTE: is this the right language?] (M = `r IAT.AST.A.mean`, SD = `r IAT.AST.A.sd`) compared to those operating White avatars (M = `r IAT.AST.W.mean`, SD = `r IAT.AST.W.sd`, F(`r IATC.WvsA.df`, `r IATC.df2`) = `r IATC.WvsA.F`, p = `r IATC.WvsA.p`, d = `r IAT.WvsA.d`). In the Black Stereotype Threat condition, participants operating Black avatars had no-different levels of implicit bias towards Blacks [NOTE: is this the right language?] (M = `r IAT.BST.B.mean`, SD = `r IAT.BST.B.sd`) compared to those operating White avatars (M = `r IAT.BST.W.mean`, SD = `r IAT.BST.W.sd`, F(`r IATC.WvsB.df`, `r IATC.df2`) = `r IATC.WvsB.F`, p = `r IATC.WvsB.p`, d = `r IAT.WvsB.d`). Overall, this suggest no support for Hypothesis 1c. 
+
+To test Hypothesis 2 we fit a moderated mediation model where Threat Condition moderated the indirect effect of Avatar Race on Ethnocultural Empathy and Awareness of Racism through Implicit Bias (See Figure TK). These were fit as separate models to accomodate two outcomes (ethnocultural empathy and awareness of racism), but the same seed was used for the bootstrapping and results are presented together in Figure TK, as fitting these models separately is equivalent to fitting them simultaneously while allowing for correlated residuals. 
+
+The conditional effects of Avatar Race on Ethnocultural Empathy are the same as those reported for Hypothesis 1a. In the model for implicit bias, there was a significant effect of ethnocultural empathy on implicit bias controlling for Avatar Race and Threat Condition, such that higher scores on ethnocultural empathy corresponded to lower scores on implicit bias ($b$ = `r EEprocess[12,1]`, $t$(`r EEprocess[9,6]`) = `r EEprocess[12,3]`, $p$ = `r EEprocess[12,4]`). The direct effect of Avatar Race was not significantly moderated by Threat Condition ($b$ = `r EEprocess[14,1]`, $t$(`r EEprocess[9,6]`) = `r EEprocess[14,3]`, $p$ = `r EEprocess[14,4]`). In the AST condition, the direct effect was non-significant such that operating an Asian Avatar led to no different levels of implicit bias compared to a White Avatar after controlling for ethnocultural empathy ($b$ = `r EEprocess[16,2]`, $t$(`r EEprocess[9,6]`) = `r EEprocess[16,4]`, $p$ = `r EEprocess[16,5]`). In the BST condition, the direct effect was non-significant such that operating an Black Avatar led to no different levels of implicit bias compared to a White Avatar after controlling for ethnocultural empathy ($b$ = `r EEprocess[17,2]`, $t$(`r EEprocess[9,6]`) = `r EEprocess[17,4]`, $p$ = `r EEprocess[17,5]`). The conditional indirect effect in the AST was not significantly different from zero ($ab$ = `r EEprocess[20,2]`, 95% Bootstrap CI = [`r EEprocess[20,4]`, `r EEprocess[20,5]`]). These results do not support Hypothesis 2a. The conditional indirect effect in the BST was not significantly different from zero ($ab$ = `r EEprocess[21,2]`, 95% Bootstrap CI = [`r EEprocess[21,4]`, `r EEprocess[21,5]`]). These results don't support Hypothesis 2b. The index of moderated mediation was not significant suggesting the indirect effect of Avatar Race on implicit bias through ethnocultural emphathy was no different in the AST condition compared to the BST condition ($IMM$ = `r EEprocess[22,1]`, 95% Bootstrap CI = [`r EEprocess[22,3]`, `r EEprocess[22,4]`]). 
+
+Next we examine the results from the model from awareness of racism. There was a significant effect of ethnocultural empathy on awareness of racism controlling for Avatar Race and Threat Condition, such that higher scores on ethnocultural empathy corresponded to higher scores on awareness of racism ($b$ = `r CBprocess[12,1]`, $t$(`r CBprocess[9,6]`) = `r CBprocess[12,3]`, $p$ = `r AORmmbp`). The direct effect of Avatar Race was not significantly moderated by Threat Condition ($b$ = `r CBprocess[14,1]`, $t$(`r CBprocess[9,6]`) = `r CBprocess[14,3]`, $p$ = `r CBprocess[14,4]`). In the AST condition, the direct effect was non-significant such that operating an Asian Avatar led to no different levels of awareness of racism compared to a White Avatar after controlling for ethnocultural empathy ($b$ = `r CBprocess[16,2]`, $t$(`r CBprocess[9,6]`) = `r CBprocess[16,4]`, $p$ = `r CBprocess[16,5]`). In the BST condition, the direct effect was non-significant such that operating an Black Avatar led to no different levels of awareness of racism compared to a White Avatar after controlling for ethnocultural empathy ($b$ = `r CBprocess[17,2]`, $t$(`r CBprocess[9,6]`) = `r CBprocess[17,4]`, $p$ = `r CBprocess[17,5]`). The conditional indirect effect in the AST was not significantly different from zero ($ab$ = `r CBprocess[20,2]`, 95% Bootstrap CI = [`r CBprocess[20,4]`, `r CBprocess[20,5]`]). These results do not support Hypothesis 2a. The conditional indirect effect in the BST was not significantly different from zero ($ab$ = `r CBprocess[21,2]`, 95% Bootstrap CI = [`r CBprocess[21,4]`, `r CBprocess[21,5]`]). These results do not Hypothesis 2b. The index of moderated mediation was not significant suggesting the indirect effect of Avatar Race on awareness of racism through ethnocultural emphathy was no different in the AST condition compared to the BST condition ($IMM$ = `r CBprocess[22,1]`, 95% Bootstrap CI = [`r CBprocess[22,3]`, `r CBprocess[22,4]`]).
+
+# Exploratory Analyses
+
+## Power Analysis at new N
+
+## Does the association of EE and AOR with IAT depend on condition (i.e., which IAT they took)?
+
+```{r}
+process(data = dat, y = "IAT_D", x = "EEmean", w = "ThreatCondition.num", model = 1, intprobe=1)
+```
+Overall, there is not a significant interaction between threat condition and ethnocultural empathy. But we do see that the relationship between ethnocultural empathy is not significant in the AST condition, and is significant in the BST condition. This suggests that there may be a lack of validity with the Asian-Disease IAT used. 
+
+```{r}
+process(data = dat, y = "IAT_D", x = "CBmean", w = "ThreatCondition.num", model = 1, intprobe=1)
+```
+
+There is a significant interaction between threat condition and awareness of racism in predicting IAT. Similar to ethnocultural empathy, the relationship is not significant in the AST condition but is significant in the BST condition. Again, this suggests a potential lack of validity for the Asian-Disease IAT used in the AST condition. 
+
+## Moderation of effects by gender
+
+```{r}
+process(data = dat[dat$Gender<=2,], x = "AvatarRace.num", w = "ThreatCondition.num", z = "Gender", y = "EEmean", model = 3, intprobe=1)
+
+process(data = dat[dat$Gender<=2,], x = "AvatarRace.num", w = "ThreatCondition.num", z = "Gender", y = "CBmean", model = 3, intprobe=1)
+
+process(data = dat[dat$Gender<=2,], x = "AvatarRace.num", w = "ThreatCondition.num", z = "Gender", y = "IAT_D", model = 3, intprobe=1)
+```
+
+Only looking at participants who identified as either male or female ($N=155$). The interaction between Avatar Race and Threat Condition predicting ethnocultural empathy is not significant for men ($p = .84$) or women ($p = .94$), nor is it significantly moderated by gender ($p = .83$). The same pattern holds for awareness of racism (men, $p = .78$; women, $p = .71$ interaction, $p = .66$). The same pattern holds for IAT score (men, $p = .70$; women, $p = .23$ interaction, $p = .69$). 
+
+## Accounting for non-normality of EE and AOR residuals
+
+### Ethnocultural Empathy
+
+```{r}
+bcEE <- boxcox(EEmodel, lambda = seq(-3,3))
+best.lam.EE <- bcEE$x[which(bcEE$y==max(bcEE$y))]
+EEboxcoxmodel <- lm(EEmean^best.lam.EE~ThreatCondition*AvatarRace, data = dat)
+summary(EEboxcoxmodel)
+EEbcresid <- resid(EEboxcoxmodel)
+shapiro.test(EEbcresid)
+```
+
+Box-cox transformation didn't really fix normality issue, still significantly different from normal. Even so, with this transformation this model does not suggest a significant interaction. 
+
+```{r}
+process(data = dat, y = "EEmean", x = "AvatarRace.num", w = "ThreatCondition.num", model = 1, modelbt = 1)
+```
+
+Bootstrap estimates of the interaction suggest no significant interaction. 
+
+### Awareness of Racism
+
+```{r}
+bcAOR <- boxcox(CBmodel, lambda = seq(-3,3))
+best.lam.AOR <- bcAOR$x[which(bcAOR$y==max(bcAOR$y))]
+AORboxcoxmodel <- lm(CBmean^best.lam.AOR~ThreatCondition*AvatarRace, data = dat)
+summary(AORboxcoxmodel)
+AORbcresid <- resid(AORboxcoxmodel)
+shapiro.test(AORbcresid)
+```
+
+Box-cox transformation didn't really fix normality issue, still significantly different from normal. Additionally, fitted model does not suggest a significant interaction. 
+
+```{r}
+process(data = dat, y = "CBmean", x = "AvatarRace.num", w = "ThreatCondition.num", model = 1, modelbt = 1)
+```
+
+Bootstrap estimates of the interaction suggest no significant interaction. 
+
+# Original Incomplete 2 X 3 analysis
+
+The design of the study as described in the stage 1 submission is an incomplete 2 (Stereotype Threat Condition: AST vs BST) X3 (Avatar Race) design. This design was incomplete because no participants were assigned to a Black avatar in the Asian Stereotype Threat Condition and no participants were assigned to an Asian avatar in the Black Stereotype Threat Condition. 
+
+For incomplete ANOVA designs it is common to use a 1-way ANOVA with prespecified contrasts (as described in the Stage 1 submission); however, upon returning to the analysis plan, it became apparent that our planned contrasts aligned exactly with the contrasts which would be estimated in a complete 2 (Stereotype Threat: AST vs. BST) X 2 (White vs. Other) design. As such we completed the analyses using this framework as it is generally easier to understand and more common to report (incomplete ANOVA designs are very uncommon in this area of research). However, in the below section we report the results of the analyses using the 1-way ANOVA method with planned contrasts. 
+
+## Hypothesis 1: White participants who operate Asian and Black avatars will show the following outcomes relative to participants who operate a White avatar, particularly in the matched threat condition. a.	Higher ethnocultural empathy, b.	Higher awareness of racism, c.	Lower implicit bias (anti-Black when compared to White participants operating Black avatars, and anti-Asian when compared to White participants operating Asian avatars). 
+
+The appropriate contrast would be:
+
+$$(\mu_{AST,W} - \mu_{AST,A})+(\mu_{BST,W} - \mu_{BST,B})}$$
+Where the first subscript ($AST$ or $BST$) indicates stereotype threat condition, and the second subscript ($W$, $A$, $B$) indicates the Avatar Race. 
+
+```{r}
+library(contrast)
+levels(dat$Condition)
+
+#main effect avatar race
+MEAR <- c(-1,-1,1,1)
+# main effect threat condition
+METC <- c(1,-1,1,-1)
+Int <- c(-1,1,1,-1)
+ConditionContrasts <- cbind(MEAR, METC,Int)
+# https://www.youtube.com/watch?v=ky6rBqQUW4U
+contrasts(dat$Condition) = ConditionContrasts
+onewayfitEE <- Anova(EEmean~Condition, data = dat, type = 3)
+Anova(onewayfitEE, type = 3, contrasts = list(Condition = list("MEAR"=1, "METC"=2, "Int"=3)))
+Anova(onewayfitEE, type = 3)
+
+onewayfitCB <- aov(CBmean~Condition, data = dat)
+summary(onewayfitCB, split = list(Condition = list("MEAR"=1, "METC"=2, "Int"=3)))
+
+onewayfitIAT <- aov(IAT_D~Condition, data = dat)
+summary(onewayfitIAT, split = list(Condition = list("MEAR"=1, "METC"=2, "Int"=3)))
+```
+
+For Hypothesis 1a and 1b, there is not a significant contrast between White vs. Asian/Black using the 1-way ANOVA contrast method for Ethnocultural Empathy (F(1,160) = .02, p = .89), for Awareness of Racism (F(1,160) = .03, p = 0.86). 
+
+## Hypothesis 1c: Hypotheses 1c will be tested using two one-way ANOVAs by avatar race with IAT score as the outcome, one for those participants who completed the anti-Black IAT and one for those participants who completed the anti-Asian IAT.
+
+```{r}
+anova(filter(dat, ThreatCondition == "BST")
+```
