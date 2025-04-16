@@ -127,6 +127,23 @@ mean(filter(leg_photo,isSent == "word" & isLeg == "ill")$legibility)
 leg_photo_word <- filter(leg_photo, isSent == "word")
 leg_photo_sent <- filter(leg_photo, isSent == "sent")
 
+
+# filter out critical photos no longer using
+# crit_19_leg_sent_16.png
+# crit_02_ill_sent_8.png
+# crit_08_ill_sent_113.png
+# crit_15_ill_sent_104.png
+# crit_18_ill_sent_113.png
+# crit_19_ill_sent_101.png
+
+removed_crit <- c("crit_19_leg_sent_16.png", 
+                  "crit_02_ill_sent_8.png",
+                  "crit_08_ill_sent_113.png",
+                  "crit_15_ill_sent_104.png",
+                  "crit_18_ill_sent_113.png",
+                  "crit_19_ill_sent_101.png")
+leg_photo_sent <- filter(leg_photo_sent, !(photo %in% removed_crit))
+
 # PLOT
 ggplot(leg_photo_word, aes(x = isLeg, y = legibility, fill = isLeg)) +
   stat_summary(fun = mean, geom = "bar", color = "black", width = 0.6, alpha = 0.7) +
@@ -174,10 +191,47 @@ t.test(ratings_leg,ratings_ill,paired=TRUE)
 
 
 # RATINGS OF FILLERS
-# In addition, we should also look at the ratings of the fillers to see that they are legible as well. Hopefully they would be rated as more legible than the illegible critical sentences; and I expect them to not be statistically distinguishable from the legible critical sentences. For this, we can run a model just on full sentences (not individual words), and now the random effect is by “picture” (i.e., png file), not “sentence” (because some sentences only have the “filler” condition and some sentences only have the “legible”+”illegible” conditions):
+# remove the 14 images that are changed:
+
+# fill_23_leg_sent_89.png
+# fill_30_leg_sent_120.png
+# fill_31_leg_sent_62.png
+# fill_43_leg_sent_85.png
+# fill_60_leg_sent_66.png
+# fill_61_leg_sent_28.png
+# fill_68_leg_sent_81.png
+# fill_72_leg_sent_55.png
+
+removed_fill <- c("fill_23_leg_sent_89.png",
+                  "fill_30_leg_sent_120.png",
+                  "fill_31_leg_sent_62.png",
+                  "fill_43_leg_sent_85.png",
+                  "fill_60_leg_sent_66.png",
+                  "fill_61_leg_sent_28.png",
+                  "fill_68_leg_sent_81.png",
+                  "fill_72_leg_sent_55.png")
+
+df_main_fill <- filter(df_main, isCrit == "fill" & !(fileName %in% removed_fill))
+
+
+uniqueNames <- unique(df_main_fill$fileName)
+leg_fill <- data.frame(photo = uniqueNames, legibility = 0)
+for (i in 1:nrow(leg_fill)) { # go through the rows
+  curFileName <- leg_fill$photo[i]
+  leg_fill$legibility[i] <- mean(as.numeric(df_main_fill$Data[which(df_main_fill$fileName == curFileName & df_main_fill$Question == "leg" & !is.na(df_main_fill$Data))]))
+}
+leg_fill$legibility <- round(leg_fill$legibility,2)
+leg_fill
+
+  
+# In addition, we should also look at the ratings of the fillers to see that they are legible as well. 
+#Hopefully they would be rated as more legible than the illegible critical sentences; 
+#and I expect them to not be statistically distinguishable from the legible critical sentences. 
+#For this, we can run a model just on full sentences (not individual words), 
+#and now the random effect is by “picture” (i.e., png file), not “sentence” 
+#(because some sentences only have the “filler” condition and some sentences only have the “legible”+”illegible” conditions):
 #   
 #   rating ~ 1 + condition + (1 | sentence) + (1 + condition | participant)
 # 
 # Here, condition has 3 levels (filler, legible, illegible), and we can do pairwise comparisons between filler and each of the other two levels.
 
-# in progress bc I wanted to go to sleep (I am eepy)

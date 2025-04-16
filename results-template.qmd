@@ -51,6 +51,9 @@ nrow(filter(df, parameter == "_PreloadFailed_"))
 
 df <- df[-which(df$parameter == "_PreloadFailed_"),] # remove trials where the photos didn't load
 
+
+
+
 df <- select(df, -c("IP","controller","order", "element", "latin","penntype","eventTime", "prolificID", "comments"))
 
 filter(df, value == "unchecked") # what to do w people who don't check native english speaker???
