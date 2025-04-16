@@ -119,3 +119,18 @@ for (i in 1:nrow(changed_df)) {
 rows_to_discard[-1] # which ones to remove
 
 final_df <- changed_df[-rows_to_discard[-1],]
+
+
+
+
+
+# testing adist()
+adist("alfalfa","alfalfaa")
+adist("alfalfa","alfblfa")
+adist("alfalfa","banana")
+adist("mymomwantsmetodosomanychoresandnapsmeifidontfinishthemquickly","mymomwantsmetodosomanychoresandnagsmeifidontfinishthemquickly")
+adist("mymomwantsmetodosomanychoresandnapsme","mymomwantsmetodosomanychoresandnagsmeifidontfinishthemquickly")
+adist("mymomwantsmetodosoandnapsmeifidontfinishthemquickly","mymomwantsmetodosomanychoresandnagsmeifidontfinishthemquickly")
+adist("mymomwantsmetodosomanychoresandnapsmeifidontfinishthemquickly","mymomwantsmetodosomanychoresandnagsmeifidontfinishthemquickly")
+
+adist("plane","pne")

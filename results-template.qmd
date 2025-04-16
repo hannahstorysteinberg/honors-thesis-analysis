@@ -6,7 +6,15 @@ editor: visual
 ---
 
 # To do:
-# get probabilites from four model intercepts
+# get probabilites from four model intercepts (not working)
+# test edit distance function (adist(x,y))
+# filler accuracy = correct if edit distance less than or equal to 2
+# remove people with filler accuracy less than 90%
+# remove people who learned english after the age of 7 (8 and above)
+# change classification of critical sentences
+# remove all punctuation (done)
+# remove ii in richard (done)
+# changed sentence about truck to have bell instead of ball
 
 ```{r setup, include=FALSE}
 options(digits=2)
@@ -25,6 +33,8 @@ library(stringr)
 library(lme4)
 library(lmerTest) # stack overflow said this would show p values
 library(ggplot2)
+library(mosaicCore) #ilogit
+
 res <- read_csv(file = "results_prod 115.csv",col_names = FALSE) # need to download from google sheets
 
 df <- res
@@ -357,21 +367,16 @@ final_df$leg_dummy_ill <- ifelse(final_df$leg == 0.5, 0, 1)
 
 # prob = 1/(1+exp(-intercept))
 
-logit2prob <- function(logit){
-  odds <- exp(logit)
-  prob <- odds / (1 + odds)
-  return(prob)
-}
 
 # sim = 0, leg = 0
-model_interaction_sim_leg <- glmer(isNonLiteral ~ 1 + leg_dummy_leg * sim_dummy_sim
+model_interaction_sim_leg <- glmer(isNonLiteral ~ 1 + leg_dummy_leg*sim_dummy_sim
                            + (1 | subj)
                            #+ (0 + sim_dummy_sim | subj)
                            #+ (0 + leg | subj)
                            + (1 | sent),data = final_df,family="binomial")
 update(model_interaction_sim_leg, control = glmerControl(calc.derivs = FALSE))
 summary(model_interaction_sim_leg)
-prob_sim_leg <- logit2prob(summary(model_interaction_sim_leg)$coefficients[1,1])
+prob_sim_leg <- ilogit(summary(model_interaction_sim_leg)$coefficients[1,1])
 
 
 # sim = 0, ill = 0
@@ -382,7 +387,7 @@ model_interaction_sim_ill <- glmer(isNonLiteral ~ 1 + leg_dummy_ill * sim_dummy_
                            + (1 | sent),data = final_df,family="binomial")
 update(model_interaction_sim_ill, control = glmerControl(calc.derivs = FALSE))
 summary(model_interaction_sim_ill)
-prob_sim_ill <- logit2prob(summary(model_interaction_sim_ill)$coefficients[1,1])
+prob_sim_ill <- ilogit(summary(model_interaction_sim_ill)$coefficients[1,1])
 
 
 
@@ -395,7 +400,7 @@ model_interaction_dis_leg <- glmer(isNonLiteral ~ 1 + leg_dummy_leg * sim_dummy_
                            + (1 | sent),data = final_df,family="binomial")
 update(model_interaction_dis_leg, control = glmerControl(calc.derivs = FALSE))
 summary(model_interaction_dis_leg)
-prob_dis_leg <- logit2prob(summary(model_interaction_dis_leg)$coefficients[1,1])
+prob_dis_leg <- ilogit(summary(model_interaction_dis_leg)$coefficients[1,1])
 
 
 
@@ -410,7 +415,7 @@ update(model_interaction_dis_ill, control = glmerControl(calc.derivs = FALSE))
 summary(model_interaction_dis_ill)
 
 
-prob_dis_ill <- logit2prob(summary(model_interaction_dis_ill)$coefficients[1,1])
+prob_dis_ill <- ilogit(summary(model_interaction_dis_ill)$coefficients[1,1])
 
 
 summary_prob <- data.frame(leg = factor(c(0,0,1,1), labels = c("illegible","legible")), sim = factor(c(0,1,0,1), labels = c("dissimilar","similar")), prob = c(prob_dis_ill,prob_sim_ill,prob_dis_leg,prob_sim_leg))
@@ -423,9 +428,9 @@ ggplot(summary_prob, aes(x = leg, y = prob, fill = sim)) +
   theme_minimal()
 ```
 
-When the letter is similar, people are `r sign_bsim_interp` likely to change a legible sentence compared to an illegible sentence (b = `r betasim_est`, se = `r se_bsim`), and this effect `r p_val_bsim_sig_interp` statistically significant (z = `r z_bsim`, p = `r p_val_bsim`).
+When the letter is similar, people are `r sign_bsim_interp` likely to change a legible sentence (`r prob_sim_leg*100`%) compared to an illegible sentence (`r prob_sim_ill*100`%) (b = `r betasim_est`, se = `r se_bsim`), and this effect `r p_val_bsim_sig_interp` statistically significant (z = `r z_bsim`, p = `r p_val_bsim`).
 
-When the letter is dissimilar, people are `r sign_bdis_interp` likely to change an legible sentence compared to an illegible sentence (b = `r betadis_est`, se = `r se_bdis`), and this effect `r p_val_bdis_sig_interp` statistically significant (z = `r z_bdis`, p = `r p_val_bdis`).
+When the letter is dissimilar, people are `r sign_bdis_interp` likely to change an legible sentence (`r prob_dis_leg*100`%) compared to an illegible sentence (`r prob_dis_ill*100`%) (b = `r betadis_est`, se = `r se_bdis`), and this effect `r p_val_bdis_sig_interp` statistically significant (z = `r z_bdis`, p = `r p_val_bdis`).
 
 The effect of legibility `r strength_interpretation`, when the letters were similar, compared to dissimilar (b = `r betainteractiondis_est`, se = `r se_binteractiondis`). This effect `r p_val_binteractiondis_sig_interp` statistically significant (z = `r z_binteractiondis`, p = `r p_val_binteractiondis`).
 
@@ -614,5 +619,25 @@ ggplot(summary_df, aes(x = leg, y = is_correct, fill = sim)) +
 # #              xi00-xi00_est)
 # # colnames(dif) <- c("beta0","beta1","beta2","t00","t11","t22","xi")
 # # dif
+```
+
+
+
+
+```{r}
+#| echo: false
+#| output: false
+# testing area
+
+# sim = 0, leg = 0
+model_interaction_sim_leg <- glmer(isNonLiteral ~ 1 + leg_dummy_leg*sim_dummy_sim
+                           + (1 | subj)
+                           #+ (0 + sim_dummy_sim | subj)
+                           #+ (0 + leg | subj)
+                           + (1 | sent),data = final_df,family="binomial")
+update(model_interaction_sim_leg, control = glmerControl(calc.derivs = FALSE))
+summary(model_interaction_sim_leg)
+prob_sim_leg <- ilogit(summary(model_interaction_sim_leg)$coefficients[1,1])
+prob_sim_leg
 ```
 
