@@ -186,6 +186,8 @@ for (i in 1:nrow(changed_df)) {
     # plus special case with halfed
 
     rows_to_discard <- c(rows_to_discard, i)
+  } else if (stringdist(cur_value,cur_text)>3) {
+    rows_to_discard <- c(rows_to_discard, i)
   } else {
     rows_to_discard <- c(rows_to_discard, i) # just for now discarding ones not sure about, will classify them later
     #counter <- counter + 1#, there are 303 ones to evaluate
