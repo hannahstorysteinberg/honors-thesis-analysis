@@ -333,45 +333,6 @@ When the letter is dissimilar, people are `r sign_bdis_interp` likely to change 
 
 The effect of legibility `r strength_interpretation`, when the letters were similar, compared to dissimilar (b = `r betainteractiondis_est`, se = `r se_binteractiondis`). This effect `r p_val_binteractiondis_sig_interp` statistically significant (z = `r z_binteractiondis`, p = `r p_val_binteractiondis`).
 
-### Visualizations
-
-```{r}
-#| echo: false
-# % change for legibility and illegibility split by sim/disim
-
-summary_df <- final_df %>%
-  group_by(leg, sim) %>%
-  summarise(
-    proportion_nonliteral = mean(isNonLiteral),
-    .groups = "drop"
-  )
-# 0.5 = illegible, -0.5 = legible
-# dissimilar = -0.5, similar = 0.5
-
-
-plot_df <- summary_df %>%
-  mutate(
-    legibility = factor(leg, levels = c(-0.5, 0.5), labels = c("Legible", "Illegible")),
-    condition  = factor(sim, levels = c(-0.5,0.5), labels = c("Similar", "Dissimilar"))
-  )
-ggplot(plot_df, aes(x = legibility, y = proportion_nonliteral, fill = condition)) +
-  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +   scale_y_continuous(expand = expansion(mult = c(0, 0.1))) +
-  labs(
-    title = "Proportion of Non-Literal Changes by Legibility and Condition",
-    x = "Legibility",
-    y = "Proportion Non-Literal",
-    fill = "Condition"
-  ) +
-  geom_text(
-    aes(label = round(proportion_nonliteral, 2)),
-    position = position_dodge(width = 0.8),
-    vjust = -0.5,
-    size = 4
-  ) +
-  theme_minimal()
-
-```
-
 
 ### demographics
 
