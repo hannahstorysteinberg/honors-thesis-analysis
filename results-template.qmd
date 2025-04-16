@@ -8,9 +8,10 @@ editor: visual
 # To do:
 # get probabilites from four model intercepts (not working)
 # test edit distance function (adist(x,y)) (done)
-# filler accuracy = correct if edit distance less than or equal to 2
-# remove people with filler accuracy less than 90%
-# remove people who learned english after the age of 7 (8 and above)
+# remove all preload fails (need to remove the trial not just the preload failed row, match id to filename?)
+# filler accuracy = correct if edit distance less than or equal to 2 (done)
+# remove people with filler accuracy less than 90% (done)
+# remove people who learned english after the age of 7 (8 and above) (done)
 # change classification of critical sentences
 # remove all punctuation (done)
 # remove ii in richard (done)
@@ -34,6 +35,7 @@ library(lme4)
 library(lmerTest) # stack overflow said this would show p values
 library(ggplot2)
 library(mosaicCore) #ilogit
+library(stringdist)
 
 res <- read_csv(file = "results_prod 115.csv",col_names = FALSE) # need to download from google sheets
 
@@ -49,9 +51,12 @@ df <- filter(df, subj != "1744586734" & subj != "1744586986" & subj != "17446624
 
 df <- filter(df, !(subj %in% unique(df$subj)[filter(df, parameter == "age")$value > 50])) # filter out participants whose age is above 50
 
+df <- filter(df, (subj %in% unique(df$subj)[filter(df, parameter == "english")$value > 7]))
+
 nrow(filter(df, parameter == "_PreloadFailed_"))
 
-df <- filter(df, !(parameter == "_PreloadFailed_")) # remove trials where the photos didn't load
+
+df <- df[-which(df$parameter == "_PreloadFailed_"),] # remove trials where the photos didn't load
 
 df <- select(df, -c("IP","controller","order", "element", "latin","penntype","eventTime", "prolificID", "comments"))
 
@@ -95,6 +100,21 @@ df_main$sent <- as.numeric(gsub("_","",df_main$sentNum))
 
 
 df_main_crit <- filter(df_main, isCrit == "crit")
+
+
+df_main_fill <- filter(df_main, isCrit == "fill")
+
+df_main_fill <- df_main_fill %>% mutate(isCorrect = as.numeric(stringdist(value,text)<3))
+summary_mean_cor <- df_main_fill %>% group_by(subj) %>% summarize(mean_is_correct = mean(isCorrect))
+
+people_to_remove <- filter(summary_mean_cor, mean_is_correct < .9)$subj # 2  people below .9 
+df_main <- filter(df_main, !(subj %in% people_to_remove))
+
+
+
+
+
+
 
 
 # 0.5 = illegible, -0.5 = legible
@@ -456,13 +476,13 @@ The mean age of the `r num_participants` participants is `r mean_age` the standa
 ## Percent Correct Transcription for Filler Sentences for Each Participant
 
 ```{r}
-df_main_fill <- filter(df_main, isCrit == "fill")
-
-df_main_fill <- df_main_fill %>% mutate(isCorrect = as.numeric(adist(value,text)<3))
-summary_mean_cor <- df_main_fill %>% group_by(subj) %>% summarize(mean_is_correct = mean(isCorrect))
-
-filter(summary_mean_cor, mean_is_correct < .7) # one person 0.68
-data.frame(val = filter(df_main_fill, subj == "1744693136")$value, tex = filter(df_main_fill, subj == "1744693136")$text) # most of them are typos
+# df_main_fill <- filter(df_main, isCrit == "fill")
+# 
+# df_main_fill <- df_main_fill %>% mutate(isCorrect = as.numeric(stringdist(value,text)<3))
+# summary_mean_cor <- df_main_fill %>% group_by(subj) %>% summarize(mean_is_correct = mean(isCorrect))
+# 
+# filter(summary_mean_cor, mean_is_correct < .9) # 2  people below .9 
+# data.frame(val = filter(df_main_fill, subj == "1744698341" & isCorrect == "0")$value, tex = filter(df_main_fill, subj == "1744698341" & isCorrect == "0")$text) # most of them are typos
 summary_mean_cor %>%
   ggplot(aes(x = mean_is_correct)) +
   geom_density(color = "purple", fill = alpha("purple", 0.3)) +
