@@ -10,7 +10,7 @@ editor: visual
 # summary statistics
 # figure on two above
 # get probabilites from four model intercepts
-# fix plot
+# fix plot 
 
 ```{r setup, include=FALSE}
 options(digits=2)
@@ -375,13 +375,37 @@ summary_mean_cor %>%
 
 
 ```{r}
-#summary_mean_cor <- df_main_fill %>% group_by(subj) %>% summarize(mean_is_correct = mean(isCorrect))
+summary_leg_sim_mean <- final_df %>% group_by(subj, leg, sim) %>% summarize(mean_is_correct = mean(isNonLiteral))
+summary_table_mean <- summary_leg_sim_mean %>% group_by(leg, sim) %>% summarize(is_correct = mean(mean_is_correct))
+
+summary_table_mean
 
 
-summary_leg_sim <- final_df %>% group_by(subj, leg, sim) %>% summarize(mean_is_correct = mean(isNonLiteral))
-#%>% group_by(leg, sim) %>% summarize(mean_is_correct = mean(isCorrect))
-summary_table <- summary_leg_sim %>% group_by(leg, sim) %>% summarize(is_correct = mean(mean_is_correct))
-summary_table
+summary_table_sd <- summary_leg_sim_mean %>% group_by(leg, sim) %>% summarize(sd_non_literal = sd(mean_is_correct))
+
+summary_table_sd
+
+summary_table <- data.frame(summary_table_mean, sd = summary_table_sd$sd_non_literal)
+
+
+# 0.5 = illegible, -0.5 = legible
+# dissimilar = -0.5, similar = 0.5
+
+summary_df <- data.frame(leg = factor(summary_table$leg, labels = c("Legible", "Illegible")),
+                         sim = factor(summary_table$sim, labels = c("Dissimilar", "Similar")),
+                         is_correct = summary_table$is_correct,
+                         sd = summary_table$sd)
+
+ggplot(summary_df, aes(x = leg, y = is_correct, fill = sim)) +
+  geom_bar(stat = "identity", position = position_dodge(0.9), width = 0.7) +
+  geom_errorbar(aes(ymin = pmax(0,is_correct - sd), ymax = is_correct + sd),
+                position = position_dodge(0.9), width = 0.2) +
+  labs(x = "Legibility", y = "Proportion Correct", fill = "Similarity") +
+  theme_minimal()
+
+#geom_text(aes(label = signif, y = is_correct + sd + 0.05), 
+#            position = position_dodge(0.9), vjust = 0) +
+# summary_table$signif <- c("", "*", "", "")
 ```
 
 
