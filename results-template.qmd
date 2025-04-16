@@ -322,6 +322,59 @@ p_val_binteractiondis_sig_interp <- ifelse(p_val_binteractiondis_sig, "was", "wa
 # from the 4 models get the intercepts to get the corresponding probabilities 
 # once get these probability, use them to make a plot
 # include CI (or standard error bars) around the bars (some uncertainty estimate)
+# 
+# final_df$sim_dummy_sim <- ifelse(final_df$sim == -0.5, 0, 1)
+# sim is dummy coded where sim is coded as 1 and dissimilar is coded as 0
+# final_df$sim_dummy_dis <- ifelse(final_df$sim == 0.5, 0, 1)
+# 
+# # dissimilar = -0.5, similar = 0.5
+
+final_df$sim_dummy_sim <- ifelse(final_df$sim == -0.5, 0, 1)
+final_df$sim_dummy_dis <- ifelse(final_df$sim == 0.5, 0, 1)
+
+final_df$leg_dummy_leg <- ifelse(final_df$leg == 0.5, 0, 1)
+final_df$leg_dummy_ill <- ifelse(final_df$leg == -0.5, 0, 1)
+
+# 0.5 = illegible, -0.5 = legible
+# dissimilar = -0.5, similar = 0.5
+
+# sim = 0, leg = 0
+model_interaction_sim_leg <- glmer(isNonLiteral ~ 1 + sim_dummy_sim_leg_dummy_leg * sim_dummy_sim
+                           + (1 | subj)
+                           #+ (0 + sim_dummy_sim | subj)
+                           #+ (0 + leg | subj)
+                           + (1 | sent),data = final_df,family="binomial")
+update(model_interaction_sim_leg, control = glmerControl(calc.derivs = FALSE))
+summary(model_interaction_sim_leg)
+
+# sim = 0, ill = 0
+model_interaction_sim_ill <- glmer(isNonLiteral ~ 1 + leg * sim_dummy_sim
+                           + (1 | subj)
+                           #+ (0 + sim_dummy_sim | subj)
+                           #+ (0 + leg | subj)
+                           + (1 | sent),data = final_df,family="binomial")
+update(model_interaction_sim_ill, control = glmerControl(calc.derivs = FALSE))
+summary(model_interaction_sim_ill)
+
+# dis = 0, leg = 0
+model_interaction_dis_leg <- glmer(isNonLiteral ~ 1 + leg * sim_dummy_sim
+                           + (1 | subj)
+                           #+ (0 + sim_dummy_sim | subj)
+                           #+ (0 + leg | subj)
+                           + (1 | sent),data = final_df,family="binomial")
+update(model_interaction_dis_leg, control = glmerControl(calc.derivs = FALSE))
+summary(model_interaction_dis_leg)
+
+# dis = 0, ill = 0
+model_interaction_dis_ill <- glmer(isNonLiteral ~ 1 + leg * sim_dummy_sim
+                           + (1 | subj)
+                           #+ (0 + sim_dummy_sim | subj)
+                           #+ (0 + leg | subj)
+                           + (1 | sent),data = final_df,family="binomial")
+update(model_interaction_dis_ill, control = glmerControl(calc.derivs = FALSE))
+summary(model_interaction_dis_ill)
+
+
 
 ```
 
