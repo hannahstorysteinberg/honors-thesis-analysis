@@ -7,7 +7,7 @@ editor: visual
 
 # To do:
 # get probabilites from four model intercepts (not working)
-# test edit distance function (adist(x,y))
+# test edit distance function (adist(x,y)) (done)
 # filler accuracy = correct if edit distance less than or equal to 2
 # remove people with filler accuracy less than 90%
 # remove people who learned english after the age of 7 (8 and above)
@@ -458,7 +458,7 @@ The mean age of the `r num_participants` participants is `r mean_age` the standa
 ```{r}
 df_main_fill <- filter(df_main, isCrit == "fill")
 
-df_main_fill <- df_main_fill %>% mutate(isCorrect = as.numeric(value == text))
+df_main_fill <- df_main_fill %>% mutate(isCorrect = as.numeric(adist(value,text)<3))
 summary_mean_cor <- df_main_fill %>% group_by(subj) %>% summarize(mean_is_correct = mean(isCorrect))
 
 filter(summary_mean_cor, mean_is_correct < .7) # one person 0.68
