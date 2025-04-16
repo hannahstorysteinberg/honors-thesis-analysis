@@ -6,11 +6,7 @@ editor: visual
 ---
 
 # To do:
-# percent correct fill
-# summary statistics
-# figure on two above
 # get probabilites from four model intercepts
-# fix plot 
 
 ```{r setup, include=FALSE}
 options(digits=2)
@@ -43,7 +39,9 @@ df <- filter(df, subj != "1744586734" & subj != "1744586986" & subj != "17446624
 
 df <- filter(df, !(subj %in% unique(df$subj)[filter(df, parameter == "age")$value > 50])) # filter out participants whose age is above 50
 
+nrow(filter(df, parameter == "_PreloadFailed_"))
 
+df <- filter(df, !(parameter == "_PreloadFailed_")) # remove trials where the photos didn't load
 
 df <- select(df, -c("IP","controller","order", "element", "latin","penntype","eventTime", "prolificID", "comments"))
 
