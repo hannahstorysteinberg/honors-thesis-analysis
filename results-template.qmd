@@ -329,14 +329,39 @@ p_val_binteractiondis_sig_interp <- ifelse(p_val_binteractiondis_sig, "was", "wa
 # 
 # # dissimilar = -0.5, similar = 0.5
 
-final_df$sim_dummy_sim <- ifelse(final_df$sim == -0.5, 0, 1)
-final_df$sim_dummy_dis <- ifelse(final_df$sim == 0.5, 0, 1)
+# df_main_crit$leg <- ifelse(df_main_crit$isLeg == "leg",0.5,-0.5)
+# # # leg = 0.5 , ill = -0.5
+# 
+# df_main_crit$sim <- ifelse(df_main_crit$sent == 1 | df_main_crit$sent == 2 | df_main_crit$sent == 5 | df_main_crit$sent == 6 | df_main_crit$sent == 9 | df_main_crit$sent == 12 | df_main_crit$sent == 16 | df_main_crit$sent == 17 | df_main_crit$sent == 18 | df_main_crit$sent == 20, 0.5,-0.5)
+# # # sim = 0.5, dis = -0.5
 
-final_df$leg_dummy_leg <- ifelse(final_df$leg == 0.5, 0, 1)
-final_df$leg_dummy_ill <- ifelse(final_df$leg == -0.5, 0, 1)
+final_df$sim_dummy_sim <- ifelse(final_df$sim == 0.5, 0, 1)
+final_df$sim_dummy_dis <- ifelse(final_df$sim == -0.5, 0, 1)
+
+final_df$leg_dummy_leg <- ifelse(final_df$leg == -0.5, 0, 1)
+final_df$leg_dummy_ill <- ifelse(final_df$leg == 0.5, 0, 1)
 
 # 0.5 = illegible, -0.5 = legible
 # dissimilar = -0.5, similar = 0.5
+
+# from indp proj script
+# prob_ill <- 0.33 # in the real data illegible prob of change is 33, legible is 17
+# prob_leg <- 0.17
+# 
+# odd_ill <- prob_ill/(1-prob_ill)
+# odd_leg <- prob_leg/(1-prob_leg)
+# 
+# beta0 <- (log(odd_leg)+log(odd_ill))/2 
+# # when using 0.5,-0.5, b0 is no longer log of odds legibility, it is the average of the two odds
+# beta1 <- log(odd_ill/odd_leg) 
+
+# prob = 1/(1+exp(-intercept))
+
+logit2prob <- function(logit){
+  odds <- exp(logit)
+  prob <- odds / (1 + odds)
+  return(prob)
+}
 
 # sim = 0, leg = 0
 model_interaction_sim_leg <- glmer(isNonLiteral ~ 1 + leg_dummy_leg * sim_dummy_sim
@@ -346,6 +371,8 @@ model_interaction_sim_leg <- glmer(isNonLiteral ~ 1 + leg_dummy_leg * sim_dummy_
                            + (1 | sent),data = final_df,family="binomial")
 update(model_interaction_sim_leg, control = glmerControl(calc.derivs = FALSE))
 summary(model_interaction_sim_leg)
+prob_sim_leg <- logit2prob(summary(model_interaction_sim_leg)$coefficients[1,1])
+
 
 # sim = 0, ill = 0
 model_interaction_sim_ill <- glmer(isNonLiteral ~ 1 + leg_dummy_ill * sim_dummy_sim
@@ -355,6 +382,10 @@ model_interaction_sim_ill <- glmer(isNonLiteral ~ 1 + leg_dummy_ill * sim_dummy_
                            + (1 | sent),data = final_df,family="binomial")
 update(model_interaction_sim_ill, control = glmerControl(calc.derivs = FALSE))
 summary(model_interaction_sim_ill)
+prob_sim_ill <- logit2prob(summary(model_interaction_sim_ill)$coefficients[1,1])
+
+
+
 
 # dis = 0, leg = 0
 model_interaction_dis_leg <- glmer(isNonLiteral ~ 1 + leg_dummy_leg * sim_dummy_dis
@@ -364,6 +395,10 @@ model_interaction_dis_leg <- glmer(isNonLiteral ~ 1 + leg_dummy_leg * sim_dummy_
                            + (1 | sent),data = final_df,family="binomial")
 update(model_interaction_dis_leg, control = glmerControl(calc.derivs = FALSE))
 summary(model_interaction_dis_leg)
+prob_dis_leg <- logit2prob(summary(model_interaction_dis_leg)$coefficients[1,1])
+
+
+
 
 # dis = 0, ill = 0
 model_interaction_dis_ill <- glmer(isNonLiteral ~ 1 + leg_dummy_ill * sim_dummy_dis
@@ -375,7 +410,17 @@ update(model_interaction_dis_ill, control = glmerControl(calc.derivs = FALSE))
 summary(model_interaction_dis_ill)
 
 
+prob_dis_ill <- logit2prob(summary(model_interaction_dis_ill)$coefficients[1,1])
 
+
+summary_prob <- data.frame(leg = factor(c(0,0,1,1), labels = c("illegible","legible")), sim = factor(c(0,1,0,1), labels = c("dissimilar","similar")), prob = c(prob_dis_ill,prob_sim_ill,prob_dis_leg,prob_sim_leg))
+summary_prob
+
+
+ggplot(summary_prob, aes(x = leg, y = prob, fill = sim)) +
+  geom_bar(stat = "identity", position = position_dodge(0.9), width = 0.7) +
+  labs(x = "Legibility", y = "Proportion Correct", fill = "Similarity") +
+  theme_minimal()
 ```
 
 When the letter is similar, people are `r sign_bsim_interp` likely to change a legible sentence compared to an illegible sentence (b = `r betasim_est`, se = `r se_bsim`), and this effect `r p_val_bsim_sig_interp` statistically significant (z = `r z_bsim`, p = `r p_val_bsim`).
