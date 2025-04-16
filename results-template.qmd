@@ -7,14 +7,7 @@ editor: visual
 
 # To do:
 # get probabilites from four model intercepts (not working)
-# test edit distance function (adist(x,y)) (done)
 # remove all preload fails (need to remove the trial not just the preload failed row, match id to filename?)
-# filler accuracy = correct if edit distance less than or equal to 2 (done)
-# remove people with filler accuracy less than 90% (done)
-# remove people who learned english after the age of 7 (8 and above) (done)
-# change classification of critical sentences (done)
-# remove all punctuation (done)
-# remove ii in richard (done)
 # changed sentence about truck to have bell instead of ball
 
 ```{r setup, include=FALSE}
