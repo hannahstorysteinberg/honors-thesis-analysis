@@ -124,13 +124,13 @@ final_df <- changed_df[-rows_to_discard[-1],]
 
 
 
-# testing adist()
-adist("alfalfa","alfalfaa")
-adist("alfalfa","alfblfa")
-adist("alfalfa","banana")
-adist("mymomwantsmetodosomanychoresandnapsmeifidontfinishthemquickly","mymomwantsmetodosomanychoresandnagsmeifidontfinishthemquickly")
-adist("mymomwantsmetodosomanychoresandnapsme","mymomwantsmetodosomanychoresandnagsmeifidontfinishthemquickly")
-adist("mymomwantsmetodosoandnapsmeifidontfinishthemquickly","mymomwantsmetodosomanychoresandnagsmeifidontfinishthemquickly")
-adist("mymomwantsmetodosomanychoresandnapsmeifidontfinishthemquickly","mymomwantsmetodosomanychoresandnagsmeifidontfinishthemquickly")
+# testing stringdist()
+stringdist("alfalfa","alfalfaa")
+stringdist("alfalfa","alfblfa")
+stringdist("alfalfa","banana")
+stringdist("mymomwantsmetodosomanychoresandnapsmeifidontfinishthemquickly","mymomwantsmetodosomanychoresandnagsmeifidontfinishthemquickly")
+stringdist("mymomwantsmetodosomanychoresandnapsme","mymomwantsmetodosomanychoresandnagsmeifidontfinishthemquickly")
+stringdist("mymomwantsmetodosoandnapsmeifidontfinishthemquickly","mymomwantsmetodosomanychoresandnagsmeifidontfinishthemquickly")
+stringdist("mymomwantsmetodosomanychoresandnapsmeifidontfinishthemquickly","mymomwantsmetodosomanychoresandnagsmeifidontfinishthemquickly")
 
-adist("plane","pne")
+stringdist("plane","pne")

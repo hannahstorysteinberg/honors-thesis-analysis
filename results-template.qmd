@@ -29,6 +29,7 @@ library(lmerTest) # stack overflow said this would show p values
 library(ggplot2)
 library(mosaicCore) #ilogit
 library(stringdist)
+library(multcomp)
 
 res <- read_csv(file = "results_prod 115.csv",col_names = FALSE) # need to download from google sheets
 
@@ -44,7 +45,9 @@ df <- filter(df, subj != "1744586734" & subj != "1744586986" & subj != "17446624
 
 df <- filter(df, !(subj %in% unique(df$subj)[filter(df, parameter == "age")$value > 50])) # filter out participants whose age is above 50
 
-df <- filter(df, (subj %in% unique(df$subj)[filter(df, parameter == "english")$value > 7]))
+df <- filter(df, !(subj %in% unique(df$subj)[filter(df, parameter == "english")$value > 7]))
+
+
 
 nrow(filter(df, parameter == "_PreloadFailed_"))
 
@@ -108,11 +111,6 @@ df_main <- filter(df_main, !(subj %in% people_to_remove))
 
 
 
-
-
-
-
-
 # 0.5 = illegible, -0.5 = legible
 # dissimilar = -0.5, similar = 0.5
 
@@ -123,6 +121,11 @@ df_main_crit$leg <- ifelse(df_main_crit$isLeg == "leg",0.5,-0.5)
 df_main_crit$sim <- ifelse(df_main_crit$sent == 1 | df_main_crit$sent == 2 | df_main_crit$sent == 5 | df_main_crit$sent == 6 | df_main_crit$sent == 9 | df_main_crit$sent == 12 | df_main_crit$sent == 16 | df_main_crit$sent == 17 | df_main_crit$sent == 18 | df_main_crit$sent == 20, 0.5,-0.5)
 # # sim = 0.5, dis = -0.5
 # 
+
+# if value of sentence 15 containes "halfed", then change isSim column to sim (0.5)
+#str_detect(filter(df_main_crit, sent == 15)$value, "halfed")
+
+
 
 changed_df <- select(df_main_crit, c("subj","sent","value", "text", "leg", "sim"))
 changed_df$isNonLiteral <- NA
@@ -186,7 +189,8 @@ for (i in 1:nrow(changed_df)) {
     rows_to_discard <- c(rows_to_discard, i)
   } else {
     rows_to_discard <- c(rows_to_discard, i) # just for now discarding ones not sure about, will classify them later
-    #counter <- counter + 1#, there are 303 ones to evaluate
+    # #counter <- counter + 1#, there are 303 ones to evaluate
+    # # rather exclude too many than include ones that are bad
     # holder <- menu(c("literal (implausible)","nonliteral (plausible)", "discard trial"),title = paste("evaluate this sentence: ", cur_value, ". The real implausible sentence is: ", cur_text, ", where the implausible word is ", cur_implaus_word, ", and the plausible word is ", cur_plaus_word, ".", " The difference is ",paste(strsplit(cur_value,"")[[1]][strsplit(cur_value,"")[[1]] != strsplit(cur_text,"")[[1]]], collapse = ""), ".", " The current row number is ", i, " of ", nrow(changed_df), ".", collapse = "", sep = ""))
     # 
     # # need to somehow highlight the difference
@@ -198,21 +202,56 @@ for (i in 1:nrow(changed_df)) {
     #   changed_df$isNonLiteral[i] <- holder - 1
     #   # if it is nonliteral, will answer 2 and - 1 is 1,
     #   # if answer literal, will answer 1 and -1 is 0
-    # }
+    #}
   }
   # print(changed_df$isNonLiteral[i])
   # print(cur_value)
   # print(cur_text)
 }
 
+
 rows_to_discard[-1] # which ones to remove
 
 final_df <- changed_df[-rows_to_discard[-1],]
 
-model <- glmer(isNonLiteral ~ 1 + leg + sim + # because generated with interaction, can still run a model without an interaction
+
+# dissimilar = -0.5, similar = 0.5
+# # leg = 0.5 , ill = -0.5
+
+final_df$interaction <- interaction(final_df$leg,final_df$sim)
+
+
+final_df$subj <- factor(final_df$subj)
+final_df$sent <- factor(final_df$sent)
+
+
+
+model_interaction <- glmer(isNonLiteral ~ 0 + interaction   # interaction directly modeled
                  + (1 | subj)
                  #+ (0 + sim | subj)
-                 #+ (0 + leg | subj)
+                 + (0 + leg | sent)
+                 + (1 | sent),data = final_df,family="binomial")
+update(model_interaction, control = glmerControl(calc.derivs = FALSE))
+summary(model_interaction)
+
+
+contrast <- rbind("MainLeg" = c(0.5, -0.5, 0.5, -0.5))
+contrast <- rbind(contrast, "MainSim" = c(-0.5,-0.5,0.5,0.5))
+contrast <- rbind(contrast, "Interaction" = c(0.5, -0.5, -0.5, 0.5))
+contrast_bound <- glht(model_interaction, contrast)
+summary(contrast_bound, test = adjusted("none"))
+
+
+
+
+
+
+
+
+model <- glmer(isNonLiteral ~ 1 + leg + sim + # because generated with interaction, can still run a model without an interaction
+                 + (1 | subj)
+                 + (0 + sim | subj)
+                 + (0 + leg | sent)
                  + (1 | sent),data = final_df,family="binomial")
 update(model, control = glmerControl(calc.derivs = FALSE))
 summary(model)
@@ -274,7 +313,7 @@ final_df$sim_dummy_dis <- ifelse(final_df$sim == 0.5, 0, 1)
 
 # dissimilar = -0.5, similar = 0.5
 
-# #Interaction model with Sim = 0
+# #Interaction model with Sim = 1
 # # for the simple effects, the effect when similar is coded as 0
 # # when the letter is similar, people are more likely to change illegible sentences than legible sentences (because the estimate is positive)
 # 
@@ -299,7 +338,7 @@ z_bsim <- summary(model_interaction_sim_dummy_sim)$coefficients[2,3]
 
 # 
 # 
-# # Interaction model with Sim = 1
+# # Interaction model with Sim = 0
 # # for the simple effects, the effect when similar is coded as 1, and dissimilar is coded as 0
 # # when the letter is similar, people are more likely to change illegible sentences than legible sentences (because the estimate is positive)
 # # the difference between the simple effects is not significant (interaction is not significant)
@@ -521,6 +560,8 @@ ggplot(summary_df, aes(x = leg, y = is_correct, fill = sim)) +
                 position = position_dodge(0.9), width = 0.2) +
   labs(x = "Legibility", y = "Proportion Correct", fill = "Similarity") +
   theme_minimal()
+
+# add dots for people
 
 #geom_text(aes(label = signif, y = is_correct + sd + 0.05), 
 #            position = position_dodge(0.9), vjust = 0) +
